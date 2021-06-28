@@ -13,8 +13,7 @@ This is ANSI C code (C89) implementing Punycode (RFC 3492).
 
 /*** Bootstring parameters for Punycode ***/
 
-enum
-{ base = 36, tmin = 1, tmax = 26, skew = 38, damp = 700,
+enum { base = 36, tmin = 1, tmax = 26, skew = 38, damp = 700,
    initial_bias = 72, initial_n = 0x80, delimiter = 0x2D
 };
 
@@ -28,8 +27,7 @@ enum
 /* point (for use in representing integers) in the range 0 to */
 /* base-1, or base if cp is does not represent a value.       */
 
-static punycode_uint
-decode_digit (punycode_uint cp)
+static punycode_uint decode_digit(punycode_uint cp)
 {
    return cp - 48 < 10 ? cp - 22 : cp - 65 < 26 ? cp - 65 : cp - 97 < 26 ? cp - 97 : base;
 }
@@ -40,8 +38,7 @@ decode_digit (punycode_uint cp)
 /* nonzero, in which case the uppercase form is used.  The behavior   */
 /* is undefined if flag is nonzero and digit d has no uppercase form. */
 
-static char
-encode_digit (punycode_uint d, int flag)
+static char encode_digit(punycode_uint d, int flag)
 {
    return d + 22 + 75 * (d < 26) - ((flag != 0) << 5);
    /*  0..25 map to ASCII a..z or A..Z */
@@ -60,8 +57,7 @@ encode_digit (punycode_uint d, int flag)
 /* is caseless.  The behavior is undefined if bcp is not a basic */
 /* code point.                                                   */
 
-static char
-encode_basic (punycode_uint bcp, int flag)
+static char encode_basic(punycode_uint bcp, int flag)
 {
    bcp -= (bcp - 97 < 26) << 5;
    return bcp + ((!flag && (bcp - 65 < 26)) << 5);
@@ -75,8 +71,7 @@ static const punycode_uint maxint = -1;
 
 /*** Bias adaptation function ***/
 
-static punycode_uint
-adapt (punycode_uint delta, punycode_uint numpoints, int firsttime)
+static punycode_uint adapt(punycode_uint delta, punycode_uint numpoints, int firsttime)
 {
    punycode_uint k;
 
@@ -94,22 +89,20 @@ adapt (punycode_uint delta, punycode_uint numpoints, int firsttime)
 
 /*** Main encode function ***/
 
-enum punycode_status
-punycode_encode (punycode_uint input_length,
-                 const punycode_uint input[], const unsigned char case_flags[], punycode_uint * output_length, char output[])
+enum punycode_status punycode_encode(punycode_uint input_length, const punycode_uint input[], const unsigned char case_flags[], punycode_uint * output_length, char output[])
 {
    punycode_uint n,
-     delta,
-     h,
-     b,
-     out,
-     max_out,
-     bias,
-     j,
-     m,
-     q,
-     k,
-     t;
+    delta,
+    h,
+    b,
+    out,
+    max_out,
+    bias,
+    j,
+    m,
+    q,
+    k,
+    t;
 
    /* Initialize the state: */
 
@@ -122,11 +115,11 @@ punycode_encode (punycode_uint input_length,
 
    for (j = 0; j < input_length; ++j)
    {
-      if (basic (input[j]))
+      if (basic(input[j]))
       {
          if (max_out - out < 2)
             return punycode_big_output;
-         output[out++] = case_flags ? encode_basic (input[j], case_flags[j]) : input[j];
+         output[out++] = case_flags ? encode_basic(input[j], case_flags[j]) : input[j];
       }
       /* else if (input[j] < n) return punycode_bad_input; */
       /* (not needed for Punycode with unsigned code points) */
@@ -182,15 +175,15 @@ punycode_encode (punycode_uint input_length,
                if (out >= max_out)
                   return punycode_big_output;
                t = k <= bias /* + tmin */ ? tmin :      /* +tmin not needed */
-                  k >= bias + tmax ? tmax : k - bias;
+                   k >= bias + tmax ? tmax : k - bias;
                if (q < t)
                   break;
-               output[out++] = encode_digit (t + (q - t) % (base - t), 0);
+               output[out++] = encode_digit(t + (q - t) % (base - t), 0);
                q = (q - t) / (base - t);
             }
 
-            output[out++] = encode_digit (q, case_flags && case_flags[j]);
-            bias = adapt (delta, h + 1, h == b);
+            output[out++] = encode_digit(q, case_flags && case_flags[j]);
+            bias = adapt(delta, h + 1, h == b);
             delta = 0;
             ++h;
          }
@@ -205,23 +198,21 @@ punycode_encode (punycode_uint input_length,
 
 /*** Main decode function ***/
 
-enum punycode_status
-punycode_decode (punycode_uint input_length,
-                 const char input[], punycode_uint * output_length, punycode_uint output[], unsigned char case_flags[])
+enum punycode_status punycode_decode(punycode_uint input_length, const char input[], punycode_uint * output_length, punycode_uint output[], unsigned char case_flags[])
 {
    punycode_uint n,
-     out,
-     i,
-     max_out,
-     bias,
-     b,
-     j,
-     in,
-     oldi,
-     w,
-     k,
-     digit,
-     t;
+    out,
+    i,
+    max_out,
+    bias,
+    b,
+    j,
+    in,
+    oldi,
+    w,
+    k,
+    digit,
+    t;
 
    /* Initialize the state: */
 
@@ -235,7 +226,7 @@ punycode_decode (punycode_uint input_length,
    /* copy the first b code points to the output.                      */
 
    for (b = j = 0; j < input_length; ++j)
-      if (delim (input[j]))
+      if (delim(input[j]))
          b = j;
    if (b > max_out)
       return punycode_big_output;
@@ -243,8 +234,8 @@ punycode_decode (punycode_uint input_length,
    for (j = 0; j < b; ++j)
    {
       if (case_flags)
-         case_flags[out] = flagged (input[j]);
-      if (!basic (input[j]))
+         case_flags[out] = flagged(input[j]);
+      if (!basic(input[j]))
          return punycode_bad_input;
       output[out++] = input[j];
    }
@@ -267,14 +258,14 @@ punycode_decode (punycode_uint input_length,
       {
          if (in >= input_length)
             return punycode_bad_input;
-         digit = decode_digit (input[in++]);
+         digit = decode_digit(input[in++]);
          if (digit >= base)
             return punycode_bad_input;
          if (digit > (maxint - i) / w)
             return punycode_overflow;
          i += digit * w;
          t = k <= bias /* + tmin */ ? tmin :    /* +tmin not needed */
-            k >= bias + tmax ? tmax : k - bias;
+             k >= bias + tmax ? tmax : k - bias;
          if (digit < t)
             break;
          if (w > maxint / (base - t))
@@ -282,7 +273,7 @@ punycode_decode (punycode_uint input_length,
          w *= (base - t);
       }
 
-      bias = adapt (i - oldi, out + 1, oldi == 0);
+      bias = adapt(i - oldi, out + 1, oldi == 0);
 
       /* i was supposed to wrap around from out+1 to 0,   */
       /* incrementing n each time, so we'll fix that now: */
@@ -301,12 +292,12 @@ punycode_decode (punycode_uint input_length,
 
       if (case_flags)
       {
-         memmove (case_flags + i + 1, case_flags + i, out - i);
+         memmove(case_flags + i + 1, case_flags + i, out - i);
          /* Case of last character determines uppercase flag: */
-         case_flags[i] = flagged (input[in - 1]);
+         case_flags[i] = flagged(input[in - 1]);
       }
 
-      memmove (output + i + 1, output + i, (out - i) * sizeof *output);
+      memmove(output + i + 1, output + i, (out - i) * sizeof *output);
       output[i++] = n;
    }
 
@@ -322,11 +313,10 @@ punycode_decode (punycode_uint input_length,
 #include <ctype.h>
 #include <err.h>
 
-int
-main (int argc, const char **argv)
+int main(int argc, const char **argv)
 {
    if (argc <= 1)
-      errx (1, "List one or more domains to convert.");
+      errx(1, "List one or more domains to convert.");
    int a;
    for (a = 1; a < argc; a++)
    {
@@ -334,58 +324,58 @@ main (int argc, const char **argv)
       while (*d)
       {
          while (*d == '.')
-            putchar (*d++);
+            putchar(*d++);
          unsigned char *p;
          for (p = d; *p < 0x80 && *p != '.'; p++);
          if (*p == '.' || !*p)
          {                      // possible domain
-            if (strncasecmp ((char *) d, "xn--", 4))
+            if (strncasecmp((char *) d, "xn--", 4))
             {
                while (*d && *d != '.')
-                  putchar (*d++);       // normal
+                  putchar(*d++);        // normal
                continue;
             }
             // decode
             punycode_uint out[64];
-            punycode_uint len = sizeof (out) / sizeof (*out),
-               n;
-            if (punycode_decode (p - d - 4, (char *) d + 4, &len, out, NULL))
+            punycode_uint len = sizeof(out) / sizeof(*out),
+                n;
+            if (punycode_decode(p - d - 4, (char *) d + 4, &len, out, NULL))
                continue;
             for (n = 0; n < len; n++)
             {
                int u = out[n];
                if (u >= 0x4000000)
                {
-                  putchar (0xfC + (u >> 30));
-                  putchar (0x80 + ((u >> 24) & 0x3F));
-                  putchar (0x80 + ((u >> 18) & 0x3F));
-                  putchar (0x80 + ((u >> 12) & 0x3F));
-                  putchar (0x80 + ((u >> 6) & 0x3F));
-                  putchar (0x80 + (u & 0x3F));
+                  putchar(0xfC + (u >> 30));
+                  putchar(0x80 + ((u >> 24) & 0x3F));
+                  putchar(0x80 + ((u >> 18) & 0x3F));
+                  putchar(0x80 + ((u >> 12) & 0x3F));
+                  putchar(0x80 + ((u >> 6) & 0x3F));
+                  putchar(0x80 + (u & 0x3F));
                } else if (u >= 0x200000)
                {
-                  putchar (0xf8 + (u >> 24));
-                  putchar (0x80 + ((u >> 18) & 0x3F));
-                  putchar (0x80 + ((u >> 12) & 0x3F));
-                  putchar (0x80 + ((u >> 6) & 0x3F));
-                  putchar (0x80 + (u & 0x3F));
+                  putchar(0xf8 + (u >> 24));
+                  putchar(0x80 + ((u >> 18) & 0x3F));
+                  putchar(0x80 + ((u >> 12) & 0x3F));
+                  putchar(0x80 + ((u >> 6) & 0x3F));
+                  putchar(0x80 + (u & 0x3F));
                } else if (u >= 0x10000)
                {
-                  putchar (0xF0 + (u >> 18));
-                  putchar (0x80 + ((u >> 12) & 0x3F));
-                  putchar (0x80 + ((u >> 6) & 0x3F));
-                  putchar (0x80 + (u & 0x3F));
+                  putchar(0xF0 + (u >> 18));
+                  putchar(0x80 + ((u >> 12) & 0x3F));
+                  putchar(0x80 + ((u >> 6) & 0x3F));
+                  putchar(0x80 + (u & 0x3F));
                } else if (u >= 0x800)
                {
-                  putchar (0xE0 + (u >> 12));
-                  putchar (0x80 + ((u >> 6) & 0x3F));
-                  putchar (0x80 + (u & 0x3F));
+                  putchar(0xE0 + (u >> 12));
+                  putchar(0x80 + ((u >> 6) & 0x3F));
+                  putchar(0x80 + (u & 0x3F));
                } else if (u >= 0x80 || u == '<' || u == '>' || u == '&')
                {
-                  putchar (0xC0 + (u >> 6));
-                  putchar (0x80 + (u & 0x3F));
+                  putchar(0xC0 + (u >> 6));
+                  putchar(0x80 + (u & 0x3F));
                } else
-                  putchar (u);
+                  putchar(u);
             }
 
             d = p;
@@ -397,10 +387,10 @@ main (int argc, const char **argv)
             punycode_uint in[64];
             char out[64];
             punycode_uint ilen = 0,
-               olen,
-               n;
-            olen = sizeof (out) / sizeof (*out);
-            for (p = d; *p && *p != '.' && ilen < sizeof (in) / sizeof (*in); p++)
+                olen,
+                n;
+            olen = sizeof(out) / sizeof(*out);
+            for (p = d; *p && *p != '.' && ilen < sizeof(in) / sizeof(*in); p++)
             {
                unsigned long v = 0;
                if (*p >= 0xF8)
@@ -421,21 +411,21 @@ main (int argc, const char **argv)
                   v = *p;       // silly
                in[ilen++] = v;
             }
-            if (punycode_encode (ilen, in, NULL, &olen, out))
+            if (punycode_encode(ilen, in, NULL, &olen, out))
                continue;
-            printf ("xn--");
+            printf("xn--");
             for (n = 0; n < olen; n++)
-               putchar (out[n]);
+               putchar(out[n]);
             d = p;
             if (*d == '.')
-               putchar (*d++);
+               putchar(*d++);
             continue;
          }
          // unknown
          while (*d && *d != '.')
-            putchar (*d++);
+            putchar(*d++);
       }
-      putchar ('\n');
+      putchar('\n');
    }
    return 0;
 }
