@@ -21,6 +21,12 @@ update:
 	make -C SQLlib
 	make -C stringdecimal
 
+SQLlib/sqllib.o: SQLlib/sqllib.c
+	make -C SQLlib
+
+stringdecimal/stringdecimaleval.o: stringdecimal/stringdecimal.c
+	make -C stringdecimal
+
 xmlparse.o: xmlparse.c Makefile
 	cc -c -o $@ $< -DLIB
 
