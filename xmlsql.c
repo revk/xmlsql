@@ -1,6 +1,7 @@
 // Copyright (c) 2004 Adrian Kennard
 // Licence granted to be used by any company while it has Adrian Kennard as shareholder
 
+#define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
