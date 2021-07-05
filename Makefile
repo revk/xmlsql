@@ -1,5 +1,4 @@
 
-
 ifneq ($(wildcard /usr/bin/mysql_config),)
 SQLINC=$(shell mysql_config --include)
 SQLLIB=$(shell mysql_config --libs)
@@ -10,6 +9,8 @@ SQLINC=$(shell mariadb_config --include)
 SQLLIB=$(shell mariadb_config --libs)
 SQLVER=$(shell mariadb_config --version | sed 'sx\..*xx')
 endif
+
+all: xmlsql punycode
 
 xmlsql: xmlsql.c xmlparse.o punycode.o SQLlib/sqllib.o stringdecimal/stringdecimaleval.o Makefile
 	cc -O -o $@ $< xmlparse.o punycode.o SQLlib/sqllib.o -lpopt -lcrypto stringdecimal/stringdecimaleval.o -ISQLlib -Istringdecimal ${SQLINC} ${SQLLIB}
@@ -32,3 +33,6 @@ xmlparse.o: xmlparse.c Makefile
 
 punycode.o: punycode.c Makefile
 	cc -c -o $@ $< -DLIB
+
+punycode: punycode.c Makefile
+	cc -O -o $@ $<
