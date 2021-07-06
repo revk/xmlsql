@@ -3515,7 +3515,7 @@ xmltoken *doimg(xmltoken * x, process_t * state)
       return x->next;
    }
    const char *type = NULL;
-   char magic[4] = { };
+   unsigned char magic[4] = { };
    ssize_t l = read(f, magic, sizeof(magic));
    lseek(f, 0, SEEK_SET);
    if (l == sizeof(magic))
