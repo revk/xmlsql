@@ -3510,7 +3510,7 @@ xmltoken *doimg(xmltoken * x, process_t * state)
    int f = open(ta, O_RDONLY);
    if (f < 0)
    {
-      fprintf(stderr, "Unknown to open file %s\n", ta);
+      fprintf(stderr, "Unable to open file %s\n", ta);
       tagwrite(of, x, "base64", XMLATTREMOVE, "alt", alt, (void *) 0);
       return x->next;
    }
