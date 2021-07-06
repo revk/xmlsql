@@ -10,10 +10,12 @@ SQLLIB=$(shell mariadb_config --libs)
 SQLVER=$(shell mariadb_config --version | sed 'sx\..*xx')
 endif
 
+OPTS=-D_GNU_SOURCE --std=gnu99 -g -Wall -funsigned-char -std=c99 -lpopt
+
 all: xmlsql punycode
 
 xmlsql: xmlsql.c xmlparse.o punycode.o SQLlib/sqllib.o stringdecimal/stringdecimaleval.o Makefile
-	cc -O -o $@ $< xmlparse.o punycode.o SQLlib/sqllib.o -lpopt -lcrypto stringdecimal/stringdecimaleval.o -ISQLlib -Istringdecimal ${SQLINC} ${SQLLIB}
+	cc -O -o $@ $< xmlparse.o punycode.o SQLlib/sqllib.o ${OPTS} -lcrypto stringdecimal/stringdecimaleval.o -ISQLlib -Istringdecimal ${SQLINC} ${SQLLIB}
 
 update:
 	git submodule update --init --remote --recursive
@@ -35,4 +37,4 @@ punycode.o: punycode.c Makefile
 	cc -c -o $@ $< -DLIB
 
 punycode: punycode.c Makefile
-	cc -O -o $@ $<
+	cc -O -o $@ $< ${OPTS}
