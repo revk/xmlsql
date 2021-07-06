@@ -260,13 +260,13 @@ char *readtime(char *val, time_t * when)
       fmt = "%Y-%m-%d";
    } else if (strlen(val) == 8 && val[2] == ':' && val[5] == ':')
    {                            /* HH:MM:SS */
-      t.tm_year = 2000;          // 2000-01-01
+      t.tm_year = 2000;         // 2000-01-01
       t.tm_mon = 1;
       t.tm_mday = 1;
       t.tm_hour = 10 * (val[0] - '0') + val[1] - '0';
       t.tm_min = 10 * (val[3] - '0') + val[4] - '0';
       t.tm_sec = 10 * (val[6] - '0') + val[7] - '0';
-      fmt="%H:%M:%S";
+      fmt = "%H:%M:%S";
    } else if (strlen(val) == 8)
    {                            /* YYYYMMDD */
       t.tm_year = 1000 * (val[0] - '0') + 100 * (val[1] - '0') + 10 * (val[2] - '0') + val[3] - '0';
@@ -3515,7 +3515,7 @@ xmltoken *doimg(xmltoken * x, process_t * state)
       return x->next;
    }
    const char *type = NULL;
-   char magic[4];
+   char magic[4] = { };
    ssize_t l = read(f, magic, sizeof(magic));
    lseek(f, 0, SEEK_SET);
    if (l == sizeof(magic))
@@ -3534,7 +3534,10 @@ xmltoken *doimg(xmltoken * x, process_t * state)
    if (!type)
    {
       close(f);
-      fprintf(stderr, "Unknown file type for %s\n", ta);
+      if (l != sizeof(magic))
+         fprintf(stderr, "Unknown file type for %s (%d)\n", ta, (int)l);
+      else
+         fprintf(stderr, "Unknown file type for %s (%02X%02X%02X%02X)\n", ta, magic[0], magic[1], magic[2], magic[3]);
       tagwrite(of, x, "base64", XMLATTREMOVE, "alt", alt, (void *) 0);
       return x->next;
    }
