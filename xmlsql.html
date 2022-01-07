@@ -1,0 +1,231 @@
+<h1>xmlsql</h1>
+<p>A simple XML output tool with embedded simple logic, maths and sql queries.</p>
+<h2>Overview</h2>
+<p><i>xmlsql</i> is a simple command line tool which is used to produce XML format output from XML format input using special markup to allow inclusion of data and the results of SQL queries.</p>
+<p>Basically, it is very useful for dynamic content web pages or svg or other XML based output.</p>
+<p>It is not suitable as a general purpose language for processing input from forms - other tools such as <i>envcgi</i> and </i>envsql</i> make it easy to use shells such as <i>bash</i> or <i>csh</i> to process input. <i>xmlsql</i> can then easily be used as part of the script to produce output.</p>
+<p>Key features are:-</p>
+<ul>
+<li>You can include content of environment variables, or fields from SQL queries, in the output. There are a range of formatting options such as date and time formatting and money formatting.</li>
+<li>Fields used for input in forms are pre-loaded with correct values. This works not only for simple &lt;INPUT...&gt; tags, but for CHECKBOX, RADIO, and even &lt;SELECT...&gt;/&lt;OPTION...&gt; marking the right field(s) as SELECTED.</li>
+<li>Variables can be set within the script, and tests done on variables (and SQL fields) at any time allowing selection of different output as required.</li>
+<li>SQL queries are iterated allowing lists to be created easily. SQL queries can even be nested.</li>
+<li>Simple loop control logic allow iterations using internal variables.</li>
+<li>Simple maths can be performed to allow totals for money, and counts in iterations.</li>
+</ul>
+<h2>Command line</h2>
+<p>The standard --help argument lists the command line options. A list of input files can be specified allowing several files to be processed one after the other. Note that you cannot start something such as an sql query or an &lt;IF...&gt; in one file and end in the next, however you can set variables in one file and use them in the next if you wish.</p>
+<p>Normally output is to stdout, but can be to a file. Input is from stdin by default. A common usage is input from stdin and the shell input in-line using &lt;&lt;</p>
+<p>Database access is optional, and if no &lt;SQL...&gt; tags are used then not database controls need be specified.</p>
+<p>There are --debug and --comment options which provide more information about what is happening and any errors.</p>
+<h2>Variables</h2>
+<p>One of the key features is the use of variables. In some cases a variable can be referenced simply by name, such as in &lt;INPUT&nbsp;NAME=<i>name</i>...&gt;, but they can also be used within any attribute of any tage using the $ prefix. E.g. &lt;A&nbsp;HREF="test.cgi?X=$X"&gt; where $X is expanded to the content of the variable X.</p>
+<p>When looking up a variable, first the current SQL query (if any) is checked for an exact match to a field name. Any outer nested SQL queries are checked in order until a match is found. Then any locally set variables are checked, and finally any environment variables. Finding no match means an empty string for $<i>name</i> expansion and means no effect on the source for changes to INPUT/SELECT/TEXTAREA fields.</p>
+<fieldset><legend>Note</legend>When specifying stdin using &lt;&lt; in a shell, you have to consider the escaping done by the shell. E.g. <tt>$name</tt> will expand <i>name</i> before passing to xmlsql. In this case you need to use <tt>\$name</tt> to ensure xmlsql sees the variable and expands as you need.</fieldset>
+<p>There is special processing for use in INPUT and TEXTAREA to ensure that the content of the variable is correctly quoted.</p>
+<p>You can also use ${<i>name</i>} where the next character would look like part of the variable name.</p>
+<p>You can use $+<i>name</i> to force URL expansion of the content - usually used when in HREF="...", additional +s for extra levels of encoding</p>
+<p>You can use $-<i>name</i> to force safe expansion of the content replacing ' or " with underscore</p>
+<p>You can use $#<i>name</i> to force use an MD5 of the variable content instead.</p>
+<p>You can use $,<i>name</i> when used within quotes causes commas to be unquoted to allow simple list expansion i.e IN ($,list).</p>
+<p>You can use $##<i>name</i> to force use an SHA1 of the variable content instead.</p>
+<p>You can use $?<i>name</i> in an attribute value to cause the attribute to be totally omitted if the <i>name</i> is not defined. It does not expand the value. e.g. tag="$?x$x" will be like tag="$x" if x is defined and nothing, not even tag="", if not defined. Any $?<i>name</i> not defined in an attribute value causes the whole attribute to be omitted.</p>
+<p>You can use $$ to mean an actual $ character. Note within shell this would be \$\$.</p>
+<p>You can use $@ for reference to use for cache control, e.g. thing.css?$@.</p>
+<p>Note use of $ expansion within "" or '' will cause any expansion of " or ' to be prefixed with \</p>
+<h2>Special tags</h2>
+<p><i>xmlsql</i> alters the content of some standard HTML tags such as INPUT, OPTION, and TEXTAREA. It also includes some specific <i>xmlsql</i> tags SQL, IF, and WHILE. These tags can (and should) be prefixed with the namespace XMLSQL:, e.g. &lt;XMLSQL:IF...&gt; rather than just &lt;IF...&gt;.</p>
+<p>The special tags SQL, IF, WHILE and WHEN all require the tag to be specifically closed. These tags, as well as SELECT and TEXTAREA, must not over lap (i.e. &lt;IF...&gt;...&lt;SQL...&gt;...&lt;/IF&gt;...&lt;/SQL&gt; is not valid). The end of each tag is matched to the first. If there is a mismatch with no end tag then the starting tag is not processed. And end tag with no start tag just shows in the output as is. If you use --comment or --debug an error is reported where this is found.</p>
+<p>Note that these special tags can, and often do, overlap with other HTML elements with no problem.</p>
+<h2>SQL</h2>
+<p>The &lt;SQL...&gt; tag is used to start an SQL query. You must have a corresponding &lt;/SQL&gt; to mark the end of the content. There are attributes to the &lt;SQL...&gt; tag which define the query to be performed. The query is processed and each row of output causes everything between the &lt;SQL...&gt; tag and &lt;/SQL&gt; to be processed for that line. Variables accessed refer to the field names returned by the query. Field names containing a dot (i.e. <i>table</i>.<i>field</i>) are treated as the name after the last dot. Duplicate field names find the first instance only so use AS in the SQL query to create different names where required.</p>
+<fieldset><legend>Important</legend>You need to use back quotes around field names or table names where they may be a reserved word in SQL. As later versions of SQL can make new reserved words it is recommended that back quoting is always used. Be careful using backquotes from shell stdin using &lt;&lt; though as the shell gives these meaning.</fieldset>
+<fieldset><legend>SQL attributes</legend>
+<table BORDER=0>
+<tr><td>TABLE</td><td>This defined the TABLE to be used and is placed after the FROM keyword in the query.</td></tr>
+<tr><td>FROM</td><td>As above</td></tr>
+<tr><td>SELECT</td><td>This defines the selected fields to be used and is placed after the SELECT keyword in the query. If missing, * is assumed.</td></tr>
+<tr><td>WHERE</td><td>This defines the WHERE clause in the query.</td></tr>
+<tr><td>ORDER</td><td>This defines the ORDER BY clause in the query.</td></tr>
+<tr><td>GROUP</td><td>This defines the GROUP BY clause in the query.</td></tr>
+<tr><td>LIMIT</td><td>This defines the LIMIT clause in the query.</td></tr>
+<tr><td>HAVING</td><td>This defines the HAVING clause in the query.</td></tr>
+<tr><td>QUERY</td><td>This defines the whole query, usually used for CREATE TEMPORARY TABLE type clauses.</td></tr>
+<tr><td>DESC</td><td>(deprecated) This appends DESC to the ORDER clause, causing the last field in the order list to be descending order.</td></tr>
+<tr><td>DISTINCT</td><td>(deprecated) Query prefixed with DISTINCT.</td></tr>
+<tr><td>KEY</td><td>This specifies a key field name - the WHERE clause is constructed as <i>fieldname</i>=<i>value</i> using the current value of the specified field if not in the environment.</td></tr>
+<tr><td>XML</td><td>If specified then the &lt;sql...&gt; must be self closing. This creates an XML style set of rows, each tagged using the value given to XML. E.g. XML="row". Be careful in using select names and using "AS" to ensure valid XML tag names as this is not checked. If XML has no value (i.e. just XML not XML=) then generates Excel style table rows instead.</td></tr>
+<tr><td>JSARRAY</td><td>If specified then the &lt;sql...&gt; must be self closing. This creates a JSON array which contains arrays of the values from the query. If JSARRAY has a value, it is the name of a variable, and the entire JSON formatted output of the query is put in that variable.</td></tr>
+<tr><td>JSON</td><td>If specified then the &lt;sql...&gt; must be self closing. This creates a JSON array which contains objects with the tagged values from the query. If JSON has a value, it is the name of a variable, and the entire JSON formatted output of the query is put in that variable.</td></tr>
+</table>
+</fieldset>
+<p>Special cases:-</p>
+<ul>
+<li>The use of QUERY="..." to perform an operation that has no result (e.g. a CREATE&nbsp;TEMPORARY&nbsp;TABLE... command) should be used in the form &lt;SQL&nbsp;QUERY="..."&nbsp;/&gt; (i.e., with no content). If content is included it would never be used, so this is reported as an error.</li>
+<li>If the query has a result, even zero rows of result, then the &lt;SQL...&nbsp;/&gt; format must not be used as the results of the query would have no output. Again, this is reported as an error.</li>
+<li>If the ID="..." attribute is used, and the field name specified in ID is not defined, then one row is shown with SQL default values (typically as a blank input form).</li>
+<li>All date and datetime values retrieved from the database that are zero are retrieved as a blank string and not the normal 0000-00-00, etc.</li>
+</ul>
+<h2>SET</h2>
+<p>SET allows a variable or variables to be defined. Each attribute is processed in turn.</p>
+<ul>
+<li><i>name</i>=<i>value</i> sets a variable of the specified <i>name</i> to the specified <i>value</i>.</li>
+<li><i>name</i> (with no =) unsets a variable of the specified <i>name</i>.</li>
+</ul>
+<h2>EVAL</h2>
+<p>EVAL allows a variable or variables to be defined using simple maths. You can use +, -, * and / operators and parenthesis and work to any precision.
+</p>
+<p>Note the special cases of <tt>.=</tt>, <tt>#=</tt>, <tt>/=</tt> and <tt>!=</tt> apply to the settings after them in the EVAL, i.e. you must put these before the settings to which they are to be applied. (default format <tt>*</tt>)</p>
+<ul>
+<li><i>name</i>=<i>value</i> sets a variable of the specified <i>name</i> to the specified <i>value</i> evaluated using simple maths.</li>
+<li><i>name</i> (with no =) unsets a variable of the specified <i>name</i>.</li>
+<li><i>#</i>=<i>places</i> forces rounding to specified number of places for final result. This is often used for money, use <tt>#=2<//tt> to ensure result is to 2 decimal places even if <tt>.00</tt> and bankers rounding is used. If you do not set a number of places with <tt>#</tt> then the maximum number of decimal places in any argument is used as the number of places for the final result. (format <tt>=</tt>)</li>
+<li><i>/</i>=<i>places</i> limits final divide to number of places, but will use fewer places if the answer would have training zeros unless <tt>#</tt> is also set. (format <tt>+</tt>)</li>
+<li><i>!</i>=<i>string</i> sets the default string to use if the evaluation is somehow invalid (e.g. not a valid sum, or divide by zero, etc).</li>
+<li><i>.</i>=<i>format</i> sets the stringdecimal format type.</li>
+</ul>
+<p>Examples <tt>&lt;EVAL X="1+2*3"&gt;</tt> would set X to 7. <tt>&lt;EVAL #=2 X="123*1.2"&gt;</tt> would set X to 147.60.</p>
+<p>Note: the <i>value</i> is expanded with variable names e.g. <tt>$NAME</tt> as you would expect, but also expands without the leading <tt>$</tt> e.g. <tt>&lt;EVAL X=A+B&gt;</tt>. Also, any expanded variables that are blank or missing are treated as zero.</p>
+<p>Note: the sums are done with rational maths and rounded as a final divide.</p>
+<p>Note: Bankers rounding is normally applied, prefix <i>places</i> with a letter: T=Truncate (to 0); U=Up (away from 0);F=Floor (to -ve);C=Ceiling (to +ve);R=Round to nearest but 0.5 away from 0;B=Bankers rounding to nearest but 0.5 to even. E.g. to round up to whole number, <tt>#=U0</tt>.</p>
+<p><b>Warning: You should only provide well formed numeric expressions with correct balanced brackets.</b> In general errors are reported by retuning a string starting with an <tt>!</tt>, but the exact behaviour in case of incorrect input is not defined and should not be relied on.</p>
+<h2>INPUT</h2>
+<p>The &lt;INPUT...&gt; tag has the NAME="..." field checked for a valid variable. If a variable is found then the INPUT is changed so that the specified variable is the initial value. If the variable is not found, no change is made to the source. You can include <i>value</i> attribute to set a default value, or <i>set</i> attribute to specify the value even if a variable/field of the name specified exists.</p>
+<ul>
+<li>RADIO and CHECKBOX cause CHECKED to be defined or removed depending on VALUE="...". If there is no VALUE defined, then CHECKED is set if the variable is not a blank string, otherwise it is removed. If the variable content contains <i>TAB</i> characters, then each of the strings between the tabs is considered to be a value, and CHECKED set for each INPUT where the VALUE="..." matches one of those strings.</p>
+<li>INPUT TYPE=SUBMIT is not change</li>
+<li>Other types of INPUT have the content of VALUE="..." changed to the correct value. Also, if the variable is defined and matches an SQL field, and SIZE is not defined, then SIZE is set to the field size plus 1. Similarly for MAXLENGTH which is set to the field size. Size is not set for TYPE=HIDDEN as there is no point.</li>
+<li>Including <tt>TRIM</tt> in the input will remove trailing zeros from a decimal fraction in the input box.</li>
+</ul>
+<h2>SELECT/OPTION</h2>
+<p>The NAME="..." from the &lt;SELECT...&gt; is checked as a variable name. If defined then the &lt;OPTION...&gt; tags within the SELECT are considered and changed. For each, the VALUE is either specified in the &lt;OPTION&nbsp;VALUE="..."&gt; or as the text after &lt;OPTION&gt; - this is checked against the variavle value and SELECTED added or removed from trhe &lt;OPTION...&gt; tag as appropriate. If the variable content contains <i>TAB</i> characters, then each of the strings between the tabs is considered to be a value, and SELECT set for each OPTION where the value matches one of those strings. You can override the use of the variable/field with <i>set</i> attribute.</p>
+<h2>TEXTAREA</h2>
+<p>The NAME="..." from the &lt;TEXTAREA...&gt; is checked as a variable name. If defined then everything up to the corresponding &lt;/TEXTAREA&gt; is replaced with the variable's content. If not defined then FILE="..." is checked for a file that exists, and if it does then everythin within the textarea tag is replaced with the contents of the file.</p>
+<p>Note that the --safe command line option stops the file=... argument from functioning as it may allow access to system files like /etc/passwd.</p>
+<h2>OUTPUT</h2>
+<p>The &lt;OUTPUT...&gt; tag is used to produce output. It has several attributes that define what is to be output.</p>
+<fieldset><legend>OUTPUT attributes</legend>
+<table border=0>
+<tr><td>NAME</td><td>Field name to be output</td></tr>
+<tr><td>VALUE</td><td>Alternative NAME="..." allows a complete value which may have several variables to be output.</td></tr>
+<tr><td>FILE</td><td>Alternative VALUE="..." allows a complete value which is read from a file.</td></tr>
+<tr><td>TYPE</td><td>Type of output format to use.</td></tr>
+<tr><td>HREF</td><td>Defines that an &lt;A&nbsp;HREF="..."&gt; and &lt;/A&gt; are to surround the value output (if not an empty string) using the specified HREF value.</td></tr>
+<tr><td>TARGET</td><td>Where HREF is used, the &lt;A...&gt; tag includes TARGET="..." using this value.</td></tr>
+<tr><td>CLASS</td><td>If HREF defined, then this is the CLASS on the HREF, else this means a span with that CLASS surrounds the value (if not an empty string).</td></tr>
+<tr><td>STYLE</td><td>If HREF defined, then this is the STYLE on the HREF, else this means a span with that STYLE surrounds the value (if not an empty string).</td></tr>
+<tr><td>SIZE</td><td>Truncate output to specified number of characters as formatted, and adds ... to end if truncated.</td></tr>
+<tr><td>RIGHT</td><td>Prepend spaces to simple text output to make SIZE wide</td></tr>
+<tr><td>MISSING</td><td>Value to assume if field is not defined.</td></tr>
+<tr><td>BLANK</td><td>Value to assume if field is an empty string.</td></tr>
+<tr><td>XML</td><td>Indicate that this output is for quoted xml use not html, so escaping is handled differently.</td></tr>
+<tr><td><i>other</i></td><td>All other attributes define an alternative string to use where the value matches the attribute name specified and is not one of the tags listed above. <i>This is the old way to use this, see MATCH and REPLACE</i>.</td></tr>
+<tr><td>MATCH</td><td>All tags after this are assumed to be replacement for the whole value of the output, e.g. <i>tag</i>=<i>value</i> means if the output is <i>tag</i> then it is changed the <i>value</i>. After MATCH none of the tags listed above are recognised, so you can replace an output of CLASS with something if CLASS=value is listed after MATCH.</td></tr>
+<tr><td>REPLACE</td><td>As MATCH, except any instance of the <i>tag</i> in the output is replaced with <i>value</i>. This is done <b>after</b> HTML or other escaping. e.g. ":)"="&lt;img src='smiley.png'&gt;" would do smiley replacement in test.</td></tr>
+<tr><td>ISDDISABLED</td><td>Checks if ISDISABLED is set and if so added a disabled=disabeld to and INPUT tag.</td></tr>
+</table></fieldset>
+<fieldset><legend>TYPE values</legend>
+<table border=0>
+<tr><td>TIMESTAMP</td><td>Use time format %d %b %Y %H:%M:%S</td></tr>
+<tr><td>DATE</td><td>Use time format %d %b %Y , or %FT%T%z if xml output</td></tr>
+<tr><td><i>*</i>%<i>*</i></td><td>Anything with % in it is assumed to be a time format for strftime</td></tr>
+<tr><td>INTERVAL</td><td>Show an integer number of seconds  <i>Yesterday</i></td></tr>
+<tr><td>RECENT</td><td>Use a relative time format for a date or datetime such as <i>120= 2:00</i></td></tr>
+<tr><td>MEGA</td><td>Show an integer value using P, T, G, M or k suffix depending on size. Note that if you include the attribute KELVIN then K is used instead of k for kilo.</td></tr>
+<tr><td>MEBI</td><td>Show an integer value using Pi, Ti, Gi, Mi or ki suffix depending on size. Note that if you include the attribute FAKESI, then the prefixes are printed as if SI units instead of binary prefixes. KELVIN can also be used, as above.</td></tr>
+<tr><td>COMMA</td><td>Show an number with commas are three digit spacing, e.g. 1,234,567</td></tr>
+<tr><td>CASH</td><td>Show a number as cash, font red for negative, &amp;pound; and forced two decimal places (bankers rounding applied).</td></tr>
+<tr><td>CASH<i>currency</i></td><td>Show as CASH, but using currency USD, EUR or GBP.</td></tr>
+<tr><td>MASK</td><td>Show a CIDR bit count as a dotted quad IP4 format mask.</td></tr>
+<tr><td>NTH</td><td>Show a number followed by st, nd, rd or th as appropriate.</td></tr>
+<tr><td>IP</td><td>Show as IP address, reformatted as standard, so for example a decimal IP4 address is shown as a dotted quad format IPv4.</td></tr>
+<tr><td>UKTEL</td><td>Format a +xxx format number as a UK telephone number</td></tr>
+<tr><td>PENCE</td><td>Show a decimal number removing trailing zeros and optionally using &frac14;, &frac12;, or &frac34; where appropriate</td></tr>
+<tr><td>TRIM</td><td>Show a decimal number removing trailing zeros  in the decimal fraction</td></tr>
+<tr><td>FLOOR</td><td>Truncate at decimal point / full stop.</td></tr>
+<tr><td>AGE</td><td>Show difference from now, single units appropriate to time to nearest &frac14;. e.g. 5 minutes, or 44&frac12; years, etc.</td></tr>
+<tr><td>YEARS</td><td>Show difference from now in years, e.g. age in years based on DOB.</td></tr>
+<tr><td>IDN</td><td>Converts to UTF-8 if in IDN format</td></tr>
+<tr><td>SURNAME</td><td>Surname from name, i.e. last word</td></tr>
+<tr><td>FORENAME</td><td>Forename from name, i.e. skip recognised title and return first word</td></tr>
+<tr><td>FORENAMES</td><td>Forenames from name, i.e. skip recognised title and remove last word</td></tr>
+<tr><td>TITLE</td><td>Title from name if we recognise one</td></tr>
+</table>
+<p>Note that a type can be prefixed with + or -. If prefixed - then output is suppressed if the value does not start with a -, and if it does start with a - then the - is skipped. If prefixed + then output is suppressed if output does start with a -.</p>
+</fieldset>
+<h2>FORMAT</h2>
+<p>In addition to data types, there is a control for the formatting of the output, using <tt>FORMAT=</tt>.</p>
+<fieldset><legend>FORMAT values</legend>
+<table border=0>
+<tr><td>PS</td><td>Escape suitable for postscript use (\ in front of ( or ) or \).</td></tr>
+<tr><td>JSON</td><td>Patial Escapeing suitable for JSON.</td></tr>
+<tr><td>RAW</td><td>Show with no escaping at all - this is not recommended for anything that could be sourced externally as it allows insertion attacks. In most cases SAFE is appropriate.</td></tr>
+<tr><td>SAFE</td><td>Allow any properly balanced markup except &lt;script&gt; and attributes starting <tt>on</tt> which are generally javascript. SAFEMARKUP combines with MARKUP expanding www. prefix, smilies, etc. as well.</td></tr>
+<tr><td>MARKUP</td><td>Output allowing specific HTML markup (see below)</td></tr>
+<tr><td>TEXTAREA</td><td>Output for use in a text area (e.g. newlines as newlines no breaks)</td></tr>
+</table>
+<p>Note, for backwards compatibility these can be used as <tt>TYPE=</tt> where there is no change to content just formatting requirements.</p>
+</fieldset>
+<h2>INCLUDE</h2>
+<p>Takes one attribute <tt>src=</tt> specifying a filename to include at this point. File is only loaded once even if in a loop and not loaded at all if conditional and not processed. Balancing of statements is internal to each file.</p>
+<h4>EXEC</h4>
+<p>If --exec specified then EXEC can be used. It has <tt>cmd=</tt> as first argument and <tt>arg=</tt> as subsequent arguments that are the command to run and the args to pass to it. Output from the command is placed directly in the output with no processing. e.g. <tt>&lt;EXEC cmd="/bin/echo" arg="hello" arg="$var" /&gt;</tt>. If not cmd= or arg= then assumed to be an argument as is.</p>
+<h2>LATER</h2>
+<p>This is deprecated and my be withdrawn. It was needed for envhtml when nested SQL was not possible.</p>
+<p>The &lt;LATER&gt; tag is removed, then all content to the corresponding &lt;/LATER&gt; output with no changes and no variable expansion in attributes. The &lt;/LATER&gt; is removed. This allows a section of the input to be enclosed within &lt;LATER&gt;...&lt;/LATER&gt; tags so that the output can be run through <i>xmlsql</i> again a second time. The &lt;LATER&gt; tags can, of course, be nested.</p>
+<h2>IF</h2>
+<p>The &lt;IF...&gt; tag is used to allow control of what is output and what is not. Each attribute in the &lt;IF...&gt; tag is considered, and if the result is true then the content between &lt;IF...&gt; and corresponding &lt;/IF&gt; are processed as normal. If not true then the content between &lt;IF...&gt; and corresponding &lt;/IF&gt; are not processed or displayed.</p>
+<p>To work out if an IF tag is true or false, each attribute is considered in turn. Other than NOT, AND and OR, the attribute is considered to be a <i>test</i>. If the <i>test</i> is true, then the next attribute is considered. If the <i>test</i> is false then attributes are skipped up to and past the next OR attribute. If no OR is found then the IF is considered false. Finding an OR after a true <i>test</i> means the whole IF is considered true and no more attributes need be checked.</p>
+<fieldset><legend>IF attributes</legend>
+<table border=0>
+<tr><td><i>name</i></td><td>True if the variable exists.</td></tr>
+<tr><td><i>name</i>=0</td><td>True of the variable specified by the <i>name</i> has a zero value, including 0000-00-00, 0000-00-00 00:00:00, 000000000000000, 0.00, etc. A blank string is also matched.</td></tr>
+<tr><td><i>name</i>=<i>value</i></td><td>True of the variable specified by the <i>name</i> has the <i>value</i>. Note that this is a textual comparison and no evaluation is done on <i>value</i> other than normal variable expansion.</td></tr>
+<tr><td><i>name</i>=+<i>value</i></td><td>True if the value of the <i>name</i> variable is alphabetically the same or after the <i>value</i>. Note this is a purely textual comparison.</td></tr>
+<tr><td><i>name</i>=-<i>value</i></td><td>True if the value of the <i>name</i> variable is alphabetically the same or before the <i>value</i>. Note this is a purely textual comparison.</td></tr>
+<tr><td><i>name</i>=*<i>value</i></td><td>True if the value of the <i>name</i> variable is the same or a substring of the <i>value</i>, or if the <i>value</i> is not an empty string, if the <i>value</i> is a substring of the value of the <i>name</i> variable.</td></tr>
+<tr><td><i>name</i>==<i>value</i></td><td>True if the numeric value of the <i>name</i> variable is the same as the numeric value of the <i>value</i>.</td></tr>
+<tr><td><i>name</i>=#+<i>value</i></td><td>True if the numeric value of the <i>name</i> variable is the same or greater than the numeric value of the <i>value</i>..</td></tr>
+<tr><td><i>name</i>=#-<i>value</i></td><td>True if the numeric value of the <i>name</i> variable is the same or less than the numeric value of the <i>value</i>.</td></tr>
+<tr><td><i>name</i>=&amp;<i>value</i></td><td>True if the numeric value of the <i>name</i> variable has bits in common with the numeric value of the <i>value</i> (binary AND).</td></tr>
+<tr><td>NOT</td><td>Means the truth of the next attribute is inverted.</td></tr>
+<tr><td>AND</td><td>Does nothing - attributes next to each other are implicitely AND'd</td></tr>
+<tr><td>OR</td><td>A false attribute skips to (and past) the next OR. But if an OR is reached with the previous attribute having been true then the IF as a whole is considered to be true.</td></tr>
+<tr><td>EXISTS="filename"</td><td>Is true if the file exists and can be read</td></tr>
+<tr><td>ELSE</td><td>Is true if the previous IF processed was considered false and its content skipped. Usually used simply as &lt;IF&nbsp;ELSE&gt;</td></tr>
+</table></fieldset>
+<p>NOT cannot be used in front of NOT, AND, OR or at the end. It is valid in front of ELSE, e.g. &lt;IF...&gt;<i>A</i>&lt;/IF&gt;<i>B</i>&lt;IF&nbsp;NOT&nbsp;ELSE&gt;<i>C</i>&lt;/IF&gt; would either produce <i>B</i> or <i>ABC</i> depending on the initial IF condition. Normally ELSE is used for an alternative, e.g. &lt;IF...&gt;<i>A</i>&lt;/IF&gt;&lt;IF&nbsp;ELSE&gt;<i>B</i>&lt;/IF&gt; would produce <i>A</i> or <i>B</i> depending on the initial IF condition.</p>
+<h2>WHILE</h2>
+<p>The &lt;WHILE...&gt; tag works the same way as if, except that if the condition is true, after processing the contents up to the corresponding &lt;/WHILE&gt; the condition is evaluated again. Only when it is false does processing continue after the &lt;/WHILE&gt;. This is typically used with EVAL to create a loop, though for simple loops FOR can be used.</p>
+<h2>FOR</h2>
+<p>The &lt;FOR...&gt; tag has one or more attributes name=value, and iterates the contents of the &lt;FOR&gt;...&lt;/FOR&gt; setting the named environment variable each time. The variable is set to each word in the value. The words are spaces by TAB usually, but if the attribute TAB, HASH, SPACE, NL, or LF are included before name=value then they change the delimiter. E.g. &lt;FOR SPACE A="1 2 3"&gt;[&lt;output name=A&gt;]&lt;/FOR&gt; will output [1][2][3].</p>
+<p>There is also a special case for use of &lt;FOR&gt;...&lt;/FOR&gt; for simple loops. Where the value has two words only that are integers, and where UP or DOWN is included before it, that causes the value to be treated as an integer and go or down one at a time from the first to last word.</p>
+<p>It is also possible to loop time/dates using DAY, MONTH, YEAR, WEEK, HOUR, MINUTE, or SECOND as a tag before the name=value. This expects two words in the value that are ISO date/time format and will iterate up from one to the other in the interval specified.</p>
+<h2>DIR</h2>
+<p>Directory listing. With no PATH set this is directory listing of current directory. If PATH is a name of a directory, then that is listed, otherwise PATH is expanded as normal shell glob to a list of files and they are processed.</p>
+<p>For each file, the variables are set for FILENAME, FILELEAF, FILEEXT, FILESIZE, FILETYPE, FILEMODE, FILEMTIME, FILECTIME, FILEATIME, and the enclosed XML processed. Normally a directory list ignores files starting with a dot, but including ALL includes these.</p>
+<h2>SCRIPT</h2>
+<p>The &lt;SCRIPT...&gt; tag can include <i>var=name</i> one or more times which causes <tt>var name='<i>value</i>';</tt> to be added to the start of the script content. The special case <i>var=*</i> causes all columns in the current &lt;SQL...&gt; query to be output.</p>
+<p>You can include <i>object=name</i> which creates a single new var called <i>name</i> with all of the listed vars within it rather than as separate var declarations. This is recommended as it avoids creating unnecessary global variables in javascript.</p> 
+<p>The name of the variable can also start with a *, e.g. <i>var=*name</i> to indicate the value is to be output <i>raw</i> unquoted, this is mainly where an SQL query set the value of the variable using <i>JSON</i> or <i>JSARRAY</i>.</p>
+<h2>IMG</h2>
+<p>An <tt>img</tt> tag with attribute <tt>base64=</tt> and a filename will check the file exists and confirm if it looks like a PNG, GIF, or JPEG file. If so, it will create a <tt>src=</tt> with base64 data URI encoded content of the file. Any existing <tt>src=</tt> is stripped. If the file cannot be recognised then the <tt>img</tt> is output anyway, thus allowing <tt>src=</tt> to be used as a fallback.</p>
+<h2>MARKUP format</h2>
+<p>Markup output format is intended to be used where what is being output has been input by end users. Markup that is output as markup is restricted to certain specific case that are <i>safe</i>. e.g. it has to be balanced so you could not, for example, start a bold tag and not end it so leaving the rest of the page bold. Only the following markup is allowed, and all other cases are escaped.</p>
+<ul>
+<li>Balanced &lt;b&gt; for <b>bold</b>< text.</li>
+<li>Balanced &lt;i&gt; for <i>italic</i> text.</li>
+<li>Balanced &lt;s&gt; for <s>struck out</s> text.</li>
+<li>Balanced &lt;u&gt; for <u>underlined</u> text.</li>
+<li>Balanced &lt;blink&gt; for <blink>blinking</blink> text.</li>
+<li>Use of www. followed by a valid domain made in to a link to that domain.</li>
+<li>Use of http://domain/link or https://domain/link makde in to a link to that domain.</li>
+<li>Use of any smilies where smiley= is used on xmlsql command.
+<li>Other balanced markup with no attributes, e.g. &lt;quote&gt;xxx&lt;/quote&gt; are coded as a span, e.g. &lt;span class="quote"&gt;xxx&lt;/span&gt;</li>
+</ul>
+<p>To provide smilies you need a directory containing .gif, .png, .jpg (or .jpeg), or .svg files. The text before the extension is the smiley (at least two characters). e.g. a file called :-).gif is a smiley image for :-). The smiley directory is specified as a relative link which must also be valid in the URL, e.g. --smiley=smilies with :-).gig in it would change any :-) to &lt;img src='smilies//%3A%2D%29.gif' /&gt;</p>
+<p>Note that there is expecited to be whitespace before and after www.domain or http:// or https://, as well as before any smiley. A smiley must not be follwed by any alphanumeric character.</p>
+<p>The &lt;b&gt;, etc, tags must be balance properly and must not have any other attributes. e.g. &lt;b style='color:red;'&gt; is not valid in this context.</p>
+<h2>FORM</h2>
+<p>There is an option to remove forms <tt>--no-form</tt>.</p>
+<p>There is an option to include a hidden field in forms <tt>--security</tt>. This defaults to the value of envirnment variable <tt>*</tt>. This is used with security functions in envpass and password.</p>
