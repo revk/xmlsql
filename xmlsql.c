@@ -3140,9 +3140,26 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                      fprintf(out, "<tr>");
                      for (int f = 0; f < fields[level]; f++)
                      {
-                        fprintf(out, "<th>");
+                        fprintf(out, "<td");
+                        if (field[level][f].type == FIELD_TYPE_DATE)
+                           fprintf(out, " class='sqldate'");
+			else if (field[level][f].type == FIELD_TYPE_YEAR)
+                           fprintf(out, " class='sqlyear'");
+                        else if (field[level][f].type == FIELD_TYPE_TIME)
+                           fprintf(out, " class='sqltime'");
+                        else if (field[level][f].type == FIELD_TYPE_DATETIME)
+                           fprintf(out, " class='sqldatetime'");
+                        else if (field[level][f].type == FIELD_TYPE_TIMESTAMP)
+                           fprintf(out, " class='sqltimestamp'");
+                        else if (field[level][f].type == MYSQL_TYPE_VAR_STRING || field[level][f].type == FIELD_TYPE_STRING)
+                           fprintf(out, " class='sqlstring'");
+                        else if (field[level][f].type == FIELD_TYPE_SET)
+                           fprintf(out, " class='sqlset'");
+                        else if (field[level][f].type == FIELD_TYPE_ENUM)
+                           fprintf(out, " class='sqlenum'");
+                        fprintf(out, ">");
                         escapeout(row[level][f]);
-                        fprintf(out, "</th>");
+                        fprintf(out, "</td>");
                      }
                      fprintf(out, "</tr>");
                   }
