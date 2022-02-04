@@ -2838,7 +2838,9 @@ xmltoken *dosql(xmltoken * x, process_t * state)
          xmlattr *xml = xmlfindattr(x, "XML");
          xmlattr *json = xmlfindattr(x, "JSON");
          xmlattr *jsarray = xmlfindattr(x, "JSARRAY");
-         if ((json && json->value) || (jsarray && jsarray->value))
+         xmlattr *tablehead = xmlfindattr(x, "TABLEHEAD");
+         xmlattr *tablerow = xmlfindattr(x, "TABLEROW");
+         if ((json && json->value) || (jsarray && jsarray->value) || (tablerow && tablerow->value))
             out = open_memstream(&outdata, &outsize);
          char temp[MAXTEMP];
          int l = 1000,
@@ -2980,8 +2982,42 @@ xmltoken *dosql(xmltoken * x, process_t * state)
          {                      // query done, result
             fields[level] = sql_num_fields(res[level]);
             field[level] = sql_fetch_field(res[level]);
+            void escapeout(char *c) {
+               if (!c)
+                  return;
+               while (*c)
+               {
+                  if (*c == '\n' || (*c == '\r' && v[1] != '\n'))
+                     fprintf(out, "<br />");
+                  else if (*c == '\f')
+                     fprintf(out, "<br /><hr />");
+                  //else if (*c == (char) 160) fprintf (out, "&nbsp;");
+                  else if (*c == '\'')
+                     fprintf(out, "&#39;");     //apos does not work in IE Except xml
+                  else if (*c == '&')
+                     fprintf(out, "&amp;");
+                  else if (*c == '<')
+                     fprintf(out, "&lt;");
+                  else if (*c == '>')
+                     fprintf(out, "&gt;");
+                  else if (*c != '\r')
+                     fputc(*c, out);
+                  c++;
+               }
+            }
             if (x->type & XML_END)
             {                   // command has results, and we have no way to format it - special cases for direct formatted output
+               if (tablehead)
+               {
+                  fprintf(out, "<tr>");
+                  for (int f = 0; f < fields[level]; f++)
+                  {
+                     fprintf(out, "<th>");
+                     escapeout(field[level][f].name);
+                     fprintf(out, "</th>");
+                  }
+                  fprintf(out, "</tr>");
+               }
                if (xml)
                {                // Direct XML output
                   while ((row[level] = sql_fetch_row(res[level])))
@@ -3009,25 +3045,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                               xmlwrite(out, 0, "Cell", "ss:StyleID", style, 0);
                               xmlwrite(out, 0, "Data", "ss:Type", type, "FieldName", field[level][f].name, 0);
                            }
-                           while (*c)
-                           {
-                              if (*c == '\n' || (*c == '\r' && v[1] != '\n'))
-                                 fprintf(out, "<br />");
-                              else if (*c == '\f')
-                                 fprintf(out, "<br /><hr />");
-                              //else if (*c == (char) 160) fprintf (out, "&nbsp;");
-                              else if (*c == '\'')
-                                 fprintf(out, "&#39;"); //apos does not work in IE Except xml
-                              else if (*c == '&')
-                                 fprintf(out, "&amp;");
-                              else if (*c == '<')
-                                 fprintf(out, "&lt;");
-                              else if (*c == '>')
-                                 fprintf(out, "&gt;");
-                              else if (*c != '\r')
-                                 fputc(*c, out);
-                              c++;
-                           }
+                           escapeout(c);
                            if (xml->value)
                               fprintf(out, "</%s>", field[level][f].name);
                            else
@@ -3115,6 +3133,19 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                      }
                   }
                   fprintf(out, "]");
+               } else if (tablerow)
+               {                // Simple table rows
+                  while ((row[level] = sql_fetch_row(res[level])))
+                  {
+                     fprintf(out, "<tr>");
+                     for (int f = 0; f < fields[level]; f++)
+                     {
+                        fprintf(out, "<th>");
+                        escapeout(row[level][f]);
+                        fprintf(out, "</th>");
+                     }
+                     fprintf(out, "</tr>");
+                  }
                } else
                {
                   sql_free_result(res[level]);
@@ -3133,6 +3164,12 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                {
                   sql_free_result(res[level]);
                   warning(x, "SQL JSON - use self closing SQL tag");
+                  return x->end->next;
+               }
+               if (tablerow)
+               {
+                  sql_free_result(res[level]);
+                  warning(x, "SQL TABLE - use self closing SQL tag");
                   return x->end->next;
                }
                row[level] = sql_fetch_row(res[level]);
@@ -3178,7 +3215,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                warning(x, "SQL command with content produced no results - use self closing SQL tag");
             return x->end->next;
          }
-         if ((json && json->value) || (jsarray && jsarray->value))
+         if ((json && json->value) || (jsarray && jsarray->value) || (tablerow && tablerow->value))
          {
             fputc(0, out);
             fclose(out);
@@ -3187,6 +3224,8 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                tag = expand(temp, sizeof(temp), json->value);
             else if (jsarray && jsarray->value)
                tag = expand(temp, sizeof(temp), jsarray->value);
+            else if (tablerow && tablerow->value)
+               tag = expand(temp, sizeof(temp), tablerow->value);
             if (tag && *tag)
                setenv(tag, outdata, 1);
             free(outdata);
@@ -3534,7 +3573,7 @@ xmltoken *doimg(xmltoken * x, process_t * state)
    {
       close(f);
       if (l != sizeof(magic))
-         fprintf(stderr, "Unknown file type for %s (%d)\n", ta, (int)l);
+         fprintf(stderr, "Unknown file type for %s (%d)\n", ta, (int) l);
       else
          fprintf(stderr, "Unknown file type for %s (%02X%02X%02X%02X)\n", ta, magic[0], magic[1], magic[2], magic[3]);
       tagwrite(of, x, "base64", XMLATTREMOVE, "alt", alt, (void *) 0);

@@ -57,6 +57,8 @@
 <tr><td>XML</td><td>If specified then the &lt;sql...&gt; must be self closing. This creates an XML style set of rows, each tagged using the value given to XML. E.g. XML="row". Be careful in using select names and using "AS" to ensure valid XML tag names as this is not checked. If XML has no value (i.e. just XML not XML=) then generates Excel style table rows instead.</td></tr>
 <tr><td>JSARRAY</td><td>If specified then the &lt;sql...&gt; must be self closing. This creates a JSON array which contains arrays of the values from the query. If JSARRAY has a value, it is the name of a variable, and the entire JSON formatted output of the query is put in that variable.</td></tr>
 <tr><td>JSON</td><td>If specified then the &lt;sql...&gt; must be self closing. This creates a JSON array which contains objects with the tagged values from the query. If JSON has a value, it is the name of a variable, and the entire JSON formatted output of the query is put in that variable.</td></tr>
+<tr><td>TABLEHEAD</td><td>This creates a simple HTML table row with &lt;th&gt; tags for the column headings in the query.</td></tr>
+<tr><td>TABLEROW</td><td>If specified then the &lt;sql...&gt; must be self closing. This creates simple HTML table rows with &lt;td&gt; tags for the column data in the result.</td></tr>
 </table>
 </fieldset>
 <p>Special cases:-</p>
