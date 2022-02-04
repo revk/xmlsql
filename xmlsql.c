@@ -3009,7 +3009,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             {                   // command has results, and we have no way to format it - special cases for direct formatted output
                if (tablehead)
                {
-                  fprintf(out, "<tr>");
+                  fprintf(out, "<tr class='sqlhead'>");
                   for (int f = 0; f < fields[level]; f++)
                   {
                      fprintf(out, "<th>");
