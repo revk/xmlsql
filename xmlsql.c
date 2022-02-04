@@ -3137,7 +3137,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                {                // Simple table rows
                   while ((row[level] = sql_fetch_row(res[level])))
                   {
-                     fprintf(out, "<tr>");
+                     fprintf(out, "<tr class='sqlresult'>");
                      for (int f = 0; f < fields[level]; f++)
                      {
                         fprintf(out, "<td");
