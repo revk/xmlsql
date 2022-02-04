@@ -3016,7 +3016,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                      escapeout(field[level][f].name);
                      fprintf(out, "</th>");
                   }
-                  fprintf(out, "</tr>");
+                  fprintf(out, "</tr>\n");
                }
                if (xml)
                {                // Direct XML output
@@ -3157,11 +3157,13 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                            fprintf(out, " class='sqlset'");
                         else if (field[level][f].type == FIELD_TYPE_ENUM)
                            fprintf(out, " class='sqlenum'");
+                        else if (field[level][f].flags & NUM_FLAG)
+                           fprintf(out, " class='sqlnum'");
                         fprintf(out, ">");
                         escapeout(row[level][f]);
                         fprintf(out, "</td>");
                      }
-                     fprintf(out, "</tr>");
+                     fprintf(out, "</tr>\n");
                   }
                } else
                {
