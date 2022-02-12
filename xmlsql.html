@@ -172,6 +172,7 @@
 <p>Takes one attribute <tt>src=</tt> specifying a filename to include at this point. File is only loaded once even if in a loop and not loaded at all if conditional and not processed. Balancing of statements is internal to each file.</p>
 <h4>EXEC</h4>
 <p>If --exec specified then EXEC can be used. It has <tt>cmd=</tt> as first argument and <tt>arg=</tt> as subsequent arguments that are the command to run and the args to pass to it. Output from the command is placed directly in the output with no processing. e.g. <tt>&lt;EXEC cmd="/bin/echo" arg="hello" arg="$var" /&gt;</tt>. If not cmd= or arg= then assumed to be an argument as is.</p>
+<p>Before the <tt>cmd=</tt> you can include as a first attribute <tt>include</tt>. If present the output of the exec is included at this point (and not re-run if in a loop), so processed as part of the script, otherwise it is simply output at this point.</p>
 <h2>LATER</h2>
 <p>This is deprecated and my be withdrawn. It was needed for envhtml when nested SQL was not possible.</p>
 <p>The &lt;LATER&gt; tag is removed, then all content to the corresponding &lt;/LATER&gt; output with no changes and no variable expansion in attributes. The &lt;/LATER&gt; is removed. This allows a section of the input to be enclosed within &lt;LATER&gt;...&lt;/LATER&gt; tags so that the output can be run through <i>xmlsql</i> again a second time. The &lt;LATER&gt; tags can, of course, be nested.</p>

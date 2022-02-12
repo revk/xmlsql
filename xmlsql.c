@@ -3143,7 +3143,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                         fprintf(out, "<td");
                         if (field[level][f].type == FIELD_TYPE_DATE)
                            fprintf(out, " class='sqldate'");
-			else if (field[level][f].type == FIELD_TYPE_YEAR)
+                        else if (field[level][f].type == FIELD_TYPE_YEAR)
                            fprintf(out, " class='sqlyear'");
                         else if (field[level][f].type == FIELD_TYPE_TIME)
                            fprintf(out, " class='sqltime'");
@@ -3819,31 +3819,67 @@ xmltoken *dotextarea(xmltoken * x, process_t * state)
    return x->next;
 }
 
+xmltoken *doinclude(xmltoken * x, process_t * state, char *value)
+{                               // src overrides the src check
+   xmlattr *a = xmlfindattr(x, "SRC");
+   if (value || (a && a->value))
+   {
+      char temp[MAXTEMP];
+      if (!value)
+      {
+         value = expand(temp, sizeof(temp), a->value);
+         if (strcmp(a->value, value))
+            info(x, "Include %s [%s]", a->value, value);
+         else
+            info(x, "Include %s", a->value);
+         a->value = 0;          // Don't re-include
+      }
+      xmltoken *i = loadfile(value);
+      if (i)
+      {                         // included
+         xmltoken *l = x->next;
+         x->next = i;
+         while (i && i->next)
+            i = (i->end && i->end != i ? i->end : i->next);
+         i->next = l;
+      }
+   }
+   return x->next;
+}
+
 xmltoken *doexec(xmltoken * x, process_t * state)
 {
    if (!x->attrs)
       return x->next;
    info(x, "Exec (%d)", x->attrs);
    fflush(of);
+   char *include = NULL;
+   int tempf = -1;
+   char template[] = "/tmp/xmlsqlXXXXXX";
+   if (x->attrs && !x->attr[0].value && !strcasecmp(x->attr[0].attribute, "include"))
+      tempf = mkstemp(include = template);
    int pid = fork();
    if (pid < 0)
       return x->next;
    if (pid)
+   {
+      if (include)
+         close(tempf);
       waitpid(pid, NULL, 0);
-   else
+   } else
    {                            // child
       char *args[x->attrs + 1];
-      int n;
-      for (n = 0; n < x->attrs; n++)
+      int arg = 0;
+      for (int n = (include ? 1 : 0); n < x->attrs; n++)
       {
-         args[n] = "";
+         args[arg] = NULL;
          size_t len;
-         FILE *out = open_memstream(&args[n], &len);
+         FILE *out = open_memstream(&args[arg], &len);
          xmlattr *a = &x->attr[n];
          char *v = a->attribute;
          if (v)
          {
-            if (!strcasecmp(v, n ? "arg" : "cmd"))
+            if (!strcasecmp(v, arg ? "arg" : "cmd"))
                v = a->value;
             if (v)
             {
@@ -3863,38 +3899,24 @@ xmltoken *doexec(xmltoken * x, process_t * state)
          }
          fclose(out);
          if (debug)
-            fprintf(stderr, "Arg %d [%s]\n", n, args[n]);
+            fprintf(stderr, "Arg %d [%s]\n", arg, args[arg]);
+         arg++;
       }
-      args[n] = NULL;
-      dup2(fileno(of), fileno(stdout));
+      args[arg] = NULL;
+      if (include)
+         dup2(tempf, fileno(stdout));
+      else
+         dup2(fileno(of), fileno(stdout));
       close(fileno(stdin));
       execvp(args[0], args);
       exit(0);
    }
-   return x->next;
-}
-
-xmltoken *doinclude(xmltoken * x, process_t * state)
-{
-   xmlattr *a = xmlfindattr(x, "SRC");
-   if (a && a->value)
+   if (include)
    {
-      char temp[MAXTEMP];
-      char *value = expand(temp, sizeof(temp), a->value);
-      if (strcmp(a->value, value))
-         info(x, "Include %s [%s]", a->value, value);
-      else
-         info(x, "Include %s", a->value);
-      xmltoken *i = loadfile(value);
-      a->value = 0;
-      if (i)
-      {                         // included
-         xmltoken *l = x->next;
-         x->next = i;
-         while (i && i->next)
-            i = (i->end && i->end != i ? i->end : i->next);
-         i->next = l;
-      }
+      xmltoken *newx = doinclude(x, state, include);
+      unlink(include);
+      x->attrs = 0;             // Don't re run
+      return newx;
    }
    return x->next;
 }
@@ -3949,11 +3971,13 @@ xmltoken *processxml(xmltoken * x, xmltoken * e, process_t * state)
          }
          if (!strcasecmp(x->content, "INCLUDE") || !strcasecmp(x->content, "xmlsql:INCLUDE"))
          {
-            x = doinclude(x, state);
+            x = doinclude(x, state, NULL);
             continue;
          }
-         if (allowexec && (!strcasecmp(x->content, "EXEC") || !strcasecmp(x->content, "xmlsql:EXEC")))
+         if ((!strcasecmp(x->content, "EXEC") || !strcasecmp(x->content, "xmlsql:EXEC")))
          {
+            if (!allowexec)
+               errx(1, "Use of <exec.../> without --exec");
             x = doexec(x, state);
             continue;
          }
