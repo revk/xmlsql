@@ -3832,7 +3832,6 @@ xmltoken *doinclude(xmltoken * x, process_t * state, char *value)
             info(x, "Include %s [%s]", a->value, value);
          else
             info(x, "Include %s", a->value);
-         a->value = 0;          // Don't re-include
       }
       xmltoken *i = loadfile(value);
       if (i)
@@ -3844,6 +3843,7 @@ xmltoken *doinclude(xmltoken * x, process_t * state, char *value)
          i->next = l;
       }
    }
+   x->attrs = 0;                // Don't re-run
    return x->next;
 }
 
@@ -3913,10 +3913,9 @@ xmltoken *doexec(xmltoken * x, process_t * state)
    }
    if (include)
    {
-      xmltoken *newx = doinclude(x, state, include);
+      x = doinclude(x, state, include);
       unlink(include);
-      x->attrs = 0;             // Don't re run
-      return newx;
+      return x;
    }
    return x->next;
 }
