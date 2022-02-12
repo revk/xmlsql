@@ -80,22 +80,63 @@ xmltoken *xmlparse(char *h, char *filename)
                line++;
             h++;
          }
-         while (*h)
+         char *hwas = NULL;
+         while (1)
          {                      // get attributes
+            if (hwas && !*h)
+            { // End of embedded variable
+               h = hwas;
+               hwas = NULL;
+            }
+            if (!*h)
+               break;           // End of file?
             while (isspace(*h))
             {
                if (*h == '\n')
                   line++;
                *h++ = 0;
             }
+            if (*h == '$' && isalpha(h[1]))
+            {                   // Expanded attributes in variable
+               char *s = h + 1,
+                   *e = s;
+               while (isalnum(*e))
+                  e++;
+               char *env = strndup(s, (int) (e - s));
+               char *val = getenv(env);
+               if (!val)
+                  warnx("Not found $%s", env);
+               free(env);
+               h = e; // Skip
+               if (val)
+               {
+                  hwas = h;
+                  h = val;
+               }
+               continue;
+            }
             if (*h == '/' && h[1] == '>')
             {
+               if (hwas)
+               {
+                  h = hwas;
+                  hwas = NULL;
+                  continue;
+               }
                type |= XML_END;
                *h++ = 0;
                break;
             }
             if (*h == '>')
+            {
+               if (hwas)
+               {
+                  h = hwas;
+                  hwas = NULL;
+                  continue;
+               }
                break;
+            }
             a[n].value = 0;
             if (*h == '"' || *h == '\'')
             {
