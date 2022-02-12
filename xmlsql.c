@@ -4094,7 +4094,7 @@ int main(int argc, const char *argv[])
       { "smiley", 0, POPT_ARG_STRING, &smileydir, 0, "Relative dir for smilies (used for markup format output)" },
       { "safe", 0, POPT_ARG_NONE, &safe, 0, "Restrict some operations such as file in textarea" },
       { "xml", 0, POPT_ARG_NONE, &isxml, 0, "Force extra escaping for xml output" },
-      { "exec", 0, POPT_ARG_NONE, &allowexec, 0, "Allow <include exec='...'/>" },
+      { "exec", 0, POPT_ARG_NONE, &allowexec, 0, "Allow <exec cmd='...' arg='...' arg='...' .../>" },
       { "no-form", 'f', POPT_ARG_NONE, &noform, 0, "Remove forms and change inputs to text" },
       { "security", 0, POPT_ARG_STRING, &security, 0, "Add hidden field to forms", "value" },
       { "show-hidden", 's', POPT_ARG_NONE, &showhidden, 0, "Remove type=hidden in input" },
