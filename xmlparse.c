@@ -6,8 +6,6 @@
 // library functions to parse XML source, and to produce XML from parsed source
 // Using expat may be better for real XML
 
-#define _GNU_SOURCE
-
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -37,7 +35,7 @@ xmltoken *xmlparse(char *h, char *filename)
 {                               // parse XML and return token list
    xmltoken *n = 0,
        *p = (xmltoken *) & n,
-       *t;
+       *t = NULL;
    int line = 1;
 
    while (*h)
@@ -98,8 +96,7 @@ xmltoken *xmlparse(char *h, char *filename)
                *h++ = 0;
             }
 #ifdef	DOLLAREXPAND
-#define str(d) #d
-            if (*h == '$' && isalpha(h[1]) && t->content && strcasestr(str(DOLLAREXPAND), t->content))
+            if (*h == '$' && isalpha(h[1]) && strcasestr(DOLLAREXPAND, tag))
             {                   // Expanded $variable as attributes - only in specified tags
                char *s = h + 1,
                    *e = s;
