@@ -96,27 +96,32 @@ xmltoken *xmlparse(char *h, char *filename)
                *h++ = 0;
             }
 #ifdef	DOLLAREXPAND
-            if (*h == '$' && isalpha(h[1]) && strcasestr(DOLLAREXPAND, tag))
-            {                   // Expanded $variable as attributes - only in specified tags
-               char *s = h + 1,
-                   *e = s;
-               while (isalnum(*e))
-                  e++;
-               if (!*e || (*e == '/' && e[1] == '>') || *e == '>')
-               {                // Only actually allow at end
-                  char *env = strndup(s, (int) (e - s));
-                  char *val = getenv(env);
-                  if (!val)
-                     warnx("Not found $%s", env);
-                  free(env);
-                  h = e;        // Skip
-                  if (val)
-                  {
-                     hwas = h;
-                     h = val;
-                  }
-                  continue;
-               }
+            if (*h == '$')
+            {
+               if (isalpha(h[1]) && strcasestr(DOLLAREXPAND, tag))
+               {                // Expanded $variable as attributes - only in specified tags
+                  char *s = h + 1,
+                      *e = s;
+                  while (isalnum(*e))
+                     e++;
+                  if (!*e || (*e == '/' && e[1] == '>') || *e == '>')
+                  {             // Only actually allow at end
+                     char *env = strndup(s, (int) (e - s));
+                     char *val = getenv(env);
+                     if (!val)
+                        warnx("Not found $%s", env);
+                     free(env);
+                     h = e;     // Skip
+                     if (val)
+                     {
+                        hwas = h;
+                        h = val;
+                     }
+                     continue;
+                  } else
+                     warnx("Line %d use of $%.*s not at end of attributes", line, (int) (e - s), s);
+               } else
+                  warnx("Line %d use of $variable not allowed in %.20s", line, tag);
             }
 #endif
             if (*h == '/' && h[1] == '>')
