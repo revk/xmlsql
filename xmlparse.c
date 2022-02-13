@@ -6,6 +6,7 @@
 // library functions to parse XML source, and to produce XML from parsed source
 // Using expat may be better for real XML
 
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <string.h>
@@ -84,7 +85,7 @@ xmltoken *xmlparse(char *h, char *filename)
          while (1)
          {                      // get attributes
             if (hwas && !*h)
-            { // End of embedded variable
+            {                   // End of embedded variable
                h = hwas;
                hwas = NULL;
             }
@@ -96,25 +97,31 @@ xmltoken *xmlparse(char *h, char *filename)
                   line++;
                *h++ = 0;
             }
-            if (*h == '$' && isalpha(h[1]))
-            {                   // Expanded attributes in variable
+#ifdef	DOLLAREXPAND
+#define str(d) #d
+            if (*h == '$' && isalpha(h[1]) && t->content && strcasestr(str(DOLLAREXPAND), t->content))
+            {                   // Expanded $variable as attributes - only in specified tags
                char *s = h + 1,
                    *e = s;
                while (isalnum(*e))
                   e++;
-               char *env = strndup(s, (int) (e - s));
-               char *val = getenv(env);
-               if (!val)
-                  warnx("Not found $%s", env);
-               free(env);
-               h = e; // Skip
-               if (val)
-               {
-                  hwas = h;
-                  h = val;
+               if (!*e || (*e == '/' && e[1] == '>') || *e == '>')
+               {                // Only actually allow at end
+                  char *env = strndup(s, (int) (e - s));
+                  char *val = getenv(env);
+                  if (!val)
+                     warnx("Not found $%s", env);
+                  free(env);
+                  h = e;        // Skip
+                  if (val)
+                  {
+                     hwas = h;
+                     h = val;
+                  }
+                  continue;
                }
-               continue;
             }
+#endif
             if (*h == '/' && h[1] == '>')
             {
                if (hwas)
