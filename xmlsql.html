@@ -124,8 +124,9 @@
 <tr><td><i>other</i></td><td>All other attributes define an alternative string to use where the value matches the attribute name specified and is not one of the tags listed above. <i>This is the old way to use this, see MATCH and REPLACE</i>.</td></tr>
 <tr><td>MATCH</td><td>All tags after this are assumed to be replacement for the whole value of the output, e.g. <i>tag</i>=<i>value</i> means if the output is <i>tag</i> then it is changed the <i>value</i>. After MATCH none of the tags listed above are recognised, so you can replace an output of CLASS with something if CLASS=value is listed after MATCH.</td></tr>
 <tr><td>REPLACE</td><td>As MATCH, except any instance of the <i>tag</i> in the output is replaced with <i>value</i>. This is done <b>after</b> HTML or other escaping. e.g. ":)"="&lt;img src='smiley.png'&gt;" would do smiley replacement in test.</td></tr>
-<tr><td>ISDDISABLED</td><td>Checks if ISDISABLED is set and if so added a disabled=disabeld to and INPUT tag.</td></tr>
+<tr><td>ISDDISABLED</td><td>Checks if ISDISABLED is set and if so added a disabled=disabled to and INPUT tag.</td></tr>
 </table></fieldset>
+<p>Note that you can include, as the final attribute, a <tt>$<i>variable</i></tt> to expand as additional attributes - use with care.</p>
 <fieldset><legend>TYPE values</legend>
 <table border=0>
 <tr><td>TIMESTAMP</td><td>Use time format %d %b %Y %H:%M:%S</td></tr>
