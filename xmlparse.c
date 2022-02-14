@@ -96,9 +96,22 @@ xmltoken *xmlparse(char *h, char *filename)
                *h++ = 0;
             }
 #ifdef	DOLLAREXPAND
+            const char *inlist(const char *haystack, const char *needle) {
+               int l = strlen(needle);
+               while (*haystack)
+               {
+                  if (!strncasecmp(haystack, needle, l) && (!haystack[l] || haystack[l] == ','))
+                     return haystack;
+                  while (*haystack && *haystack != ',')
+                     haystack++;
+                  while (*haystack && *haystack == ',')
+                     haystack++;
+               }
+               return NULL;
+            }
             if (*h == '$')
             {
-               if (isalpha(h[1]) && strcasestr(DOLLAREXPAND, tag))
+               if (isalpha(h[1]) && inlist(DOLLAREXPAND, tag))
                {                // Expanded $variable as attributes - only in specified tags
                   char *s = h + 1,
                       *e = s;
