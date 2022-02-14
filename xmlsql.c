@@ -2973,6 +2973,11 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             char *p;
             for (p = query; *p; p++)
             {
+               if (*p == '\\' && p[1])
+               {
+                  p++;
+                  continue;
+               }
                if (q && *p == q)
                   q = 0;
                else if (!q && (*p == '`' || *p == '\'' || *p == '"'))
