@@ -111,18 +111,26 @@ xmltoken *xmlparse(char *h, char *filename)
             }
             if (*h == '$')
             {
-               if (isalpha(h[1]) && inlist(DOLLAREXPAND, tag))
+               if ((h[1] == '{' || isalpha(h[1])) && inlist(DOLLAREXPAND, tag))
                {                // Expanded $variable as attributes - only in specified tags
                   char *s = h + 1,
                       *e = s;
-                  while (isalnum(*e))
-                     e++;
+                  if (*s == '{')
+                  {
+                     s++;
+                     while (*e && *e != '}')
+                        e++;
+                  } else
+                     while (isalnum(*e))
+                        e++;
                   char *env = strndup(s, (int) (e - s));
                   char *val = getenv(env);
                   if (!val)
                      warnx("Not found $%s", env);
                   free(env);
                   h = e;        // Skip
+                  if (s[-1] == '{' && *h == '}')
+                     h++;
                   if (val)
                   {
                      hwas = h;
