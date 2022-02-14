@@ -134,7 +134,7 @@ xmltoken *xmlparse(char *h, char *filename)
                   } else
                      warnx("Line %d use of $%.*s not at end of attributes", line, (int) (e - s), s);
                } else
-                  warnx("Line %d use of $variable not allowed in %.20s [%20s...]", line, tag,h);
+                  warnx("Line %d use of $variable not allowed in %.20s [%.20s...]", line, tag,h);
             }
 #endif
             if (*h == '/' && h[1] == '>')
