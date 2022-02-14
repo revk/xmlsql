@@ -111,34 +111,48 @@ xmltoken *xmlparse(char *h, char *filename)
             }
             if (*h == '$')
             {
-               if ((h[1] == '{' || isalpha(h[1])) && inlist(DOLLAREXPAND, tag))
-               {                // Expanded $variable as attributes - only in specified tags
+               if (h[1] == '{' || isalpha(h[1]))
+               {                // Expanded $variable as attributes - only in specified tags and only at end
                   char *s = h + 1,
-                      *e = s;
+                      *e = s,
+                      *env = NULL;
                   if (*s == '{')
-                  {
+                  {             // ${tag}
                      s++;
                      while (*e && *e != '}')
                         e++;
+                     env = strndup(s, (int) (e - s));
+                     if (*e == '}')
+                        e++;
                   } else
+                  {             // $tag
                      while (isalnum(*e))
                         e++;
-                  char *env = strndup(s, (int) (e - s));
+                     env = strndup(s, (int) (e - s));
+                  }
+                  if (!*e || (*e == '/' && e[1] == '>') || *e == '>')
+                  {             // Not at end - ignore - may be valid in context anyway
+                     free(env);
+                     continue;
+                  }
+                  if (!inlist(DOLLAREXPAND, tag))
+                  {
+                     warnx("Line %d use of $variable not allowed in %.20s [%.20s...]", line, tag, h);
+                     free(env);
+                     continue;
+                  }
                   char *val = getenv(env);
                   if (!val)
                      warnx("Line %d Not found $%s in %s [%.20s...]", line, env, tag, h);
                   free(env);
                   h = e;        // Skip
-                  if (s[-1] == '{' && *h == '}')
-                     h++;
                   if (val)
                   {
                      hwas = h;
                      h = val;
                   }
                   continue;
-               } else
-                  warnx("Line %d use of $variable not allowed in %.20s [%.20s...]", line, tag, h);
+               }
             }
 #endif
             if (*h == '/' && h[1] == '>')
