@@ -2981,9 +2981,9 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                {
                   if ((*p == '-' && p[1] == '-' && (!p[2] || isspace(p[2]))) || *p == '#' || (*p == '/' && p[1] == '*'))
                      errx(1, "%s:%d Comment in SQL query: %s", x->filename, x->line, query);
+                  if (*p == ';')
+                     errx(1, "%s:%d Multiple query attempt in SQL query: %s", x->filename, x->line, query);
                }
-               if (*p == ';')
-                  errx(1, "%s:%d Multiple query attempt in SQL query: %s", x->filename, x->line, query);
             }
             if (q)
                errx(1, "%s:%d Unclosed (%c) in query: %s", x->filename, x->line, q, query);
