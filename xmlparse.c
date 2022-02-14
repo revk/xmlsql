@@ -131,27 +131,25 @@ xmltoken *xmlparse(char *h, char *filename)
                      env = strndup(s, (int) (e - s));
                   }
                   if (!*e || (*e == '/' && e[1] == '>') || *e == '>')
-                  {             // Not at end - ignore - may be valid in context anyway
-                     free(env);
-                     continue;
+                  {             // At end, OK
+                     if (!inlist(DOLLAREXPAND, tag))
+                        warnx("Line %d use of $variable not allowed in %.20s [%.20s...]", line, tag, h);
+                     else
+                     {
+                        char *val = getenv(env);
+                        if (!val)
+                           warnx("Line %d Not found $%s in %s [%.20s...]", line, env, tag, h);
+                        free(env);
+                        h = e;  // Skip
+                        if (val)
+                        {
+                           hwas = h;
+                           h = val;
+                        }
+                        continue;
+                     }
                   }
-                  if (!inlist(DOLLAREXPAND, tag))
-                  {
-                     warnx("Line %d use of $variable not allowed in %.20s [%.20s...]", line, tag, h);
-                     free(env);
-                     continue;
-                  }
-                  char *val = getenv(env);
-                  if (!val)
-                     warnx("Line %d Not found $%s in %s [%.20s...]", line, env, tag, h);
                   free(env);
-                  h = e;        // Skip
-                  if (val)
-                  {
-                     hwas = h;
-                     h = val;
-                  }
-                  continue;
                }
             }
 #endif
