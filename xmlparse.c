@@ -126,7 +126,7 @@ xmltoken *xmlparse(char *h, char *filename)
                   char *env = strndup(s, (int) (e - s));
                   char *val = getenv(env);
                   if (!val)
-                     warnx("Not found $%s", env);
+                     warnx("Line %d Not found $%s in %s [%.20s...]", line, env, tag, h);
                   free(env);
                   h = e;        // Skip
                   if (s[-1] == '{' && *h == '}')
