@@ -2968,6 +2968,26 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             }
 #undef qadd
          }
+         {                      // Sanity check
+            char q = 0;
+            char *p;
+            for (p = query; *p; p++)
+            {
+               if (q && *p == q)
+                  q = 0;
+               else if (!q && (*p == '`' || *p == '\'' || *p == '"'))
+                  q = *p;
+               if (!q)
+               {
+                  if ((*p == '-' && p[1] == '-' && (!p[2] || isspace(p[2]))) || *p == '#' || (*p == '/' && p[1] == '*'))
+                     errx(1, "%s:%d Comment in SQL query: %s", x->filename, x->line, query);
+               }
+               if (*p == ';')
+                  errx(1, "%s:%d Multiple query attempt in SQL query: %s", x->filename, x->line, query);
+            }
+            if (q)
+               errx(1, "%s:%d Unclosed (%c) in query: %s", x->filename, x->line, q, query);
+         }
          if (sql_query(&sql, query))
          {
             warning(x, "SQL%d: %s\nError:%s", level, query, (char *) sql_error(&sql));
