@@ -1,0 +1,36 @@
+<h1>SQL expansion</h1>
+<p>The command <tt>sqlexpand</tt> can be used to expand environment variables within an SQL query in a safe way (i.e. handling embedded quotes).</p>
+<p>The library <tt>sqlexpand.o</tt> can be used in other tools to achieve the same objective.</p>
+<h2>Simple expansion</h2>
+<p>The simplest expansion is just <tt>$</tt> followed by a variable name (starts as a letter then letters or number).</p>
+<p>However, if the next thing is a latter or number you can include the name in curly braces, e.g <tt>${<i>variable</i>}</tt>.</p>
+<h2>Prefix</h2>
+<p>Immediately before the variable name (and inside <tt>{...}</tt> if present) can be a number of prefixes.</p>
+<table>
+	<tr><td><tt>#</tt></td><td>Add quotes around this if not in quotes already.</td></tr>
+	<tr><td><tt>,</tt></td><td>Add quotes around this if not in quotes, and add <tt>","</tt> at each comma or tab found in the expansion.</td></tr>
+	<tr><td><tt>@</tt></td><td>Consider the expanded value as a filename and read the value from that file.</td></tr>
+	<tr><td><tt>%</tt></td><td>Trust this variable <b>(use with care)</b> so allowing expansion outside quotes as is with no escaping.</td></tr>
+</table>
+<p>Only use <tt>$%<i>variable</i></tt> with great care, and ensure any construction of the variable value uses <tt>sqlexpand</tt> to safely escape what is being set.</p>.
+<h2>Special variable</h2>
+<p>Instead of the variable name itself there are some special variables.</p>
+<table>
+	<tr><td><tt>+</tt></td><td>Generate a UUID</td><tr>
+	<tr><td><tt>$</tt></td><td>Generate the parent PID</td><tr>
+	<tr><td><tt>-</tt></td><td>Read stdin</td><tr>
+	<tr><td><tt>\</tt></td><td>Generate a back tick (so starts/ends back tick quoting if used outside other quotes).</td><tr>
+	<tr><td><tt>/</tt></td><td>Generate a single quote (so starts/ends single quoting if used outside other quotes).</td><tr>
+</table>
+<h2>Index</h2>
+<p>Immediately after the variable name (and inside <tt>{...}</tt> if present) can be an index of the form <tt>[<i>number</i>]</tt>. If present then the number is used as a n index in to the value. The value is split on tab characters and index <tt>[1]</tt> if the first part. This is done before considering any suffix.</p>
+<p>TODO not done yet</p>
+<h2>Suffix</h2>
+<p>Immediately after the variable name (and inside <tt>{...}</tt>, and after <tt>[...]</tt>, if present) can be a number of suffixes.</p>
+<table>
+	<tr><td><tt>:h</tt></td><td>...TODO</td></tr>
+	<tr><td><tt>:t</tt></td><td>...TODO</td></tr>
+	<tr><td><tt>:r</tt></td><td>...TODO</td></tr>
+	<tr><td><tt>:e</tt></td><td>...TODO</td></tr>
+</table>
+

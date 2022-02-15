@@ -57,6 +57,17 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          fputc(*p++, f);
          continue;
       }
+      if (!q)
+      {
+         if (*p == '-' && p[1] == '-' && (!p[2] || isspace(p[2])))
+            return fail("Comment (-- ) in SQL");
+         if (*p == '/' && p[1] == '*')
+            return fail("Comment (/*) in SQL");
+         if (*p == '#')
+            return fail("Comment (#) in SQL");
+         if (*p == ';')
+            return fail("Multiple commands in one SQL");
+      }
       if (*p != '$')
       {                         // OK
          fputc(*p++, f);
