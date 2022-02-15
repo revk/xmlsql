@@ -12,9 +12,9 @@ endif
 
 OPTS=-D_GNU_SOURCE --std=gnu99 -g -Wall -funsigned-char -std=c99 -lpopt
 
-all: xmlsql punycode
+all: xmlsql punycode sqlexpand punycode.o sqlexpand.o
 
-xmlsql: xmlsql.c xmlparse.o punycode.o SQLlib/sqllib.o stringdecimal/stringdecimaleval.o Makefile
+xmlsql: xmlsql.c xmlparse.o punycode.o sqlexpand.o SQLlib/sqllib.o stringdecimal/stringdecimaleval.o Makefile sqlexpand.h punycode.h xmlparse.h
 	cc -O -o $@ $< xmlparse.o punycode.o SQLlib/sqllib.o ${OPTS} -lcrypto stringdecimal/stringdecimaleval.o -ISQLlib -Istringdecimal ${SQLINC} ${SQLLIB}
 
 update:
@@ -37,4 +37,10 @@ punycode.o: punycode.c Makefile
 	cc -c -o $@ $< ${OPTS} -DLIB
 
 punycode: punycode.c Makefile
+	cc -O -o $@ $< ${OPTS}
+
+sqlexpand.o: sqlexpand.c Makefile
+	cc -c -o $@ $< ${OPTS} -DLIB
+
+sqlexpand: sqlexpand.c Makefile
 	cc -O -o $@ $< ${OPTS}

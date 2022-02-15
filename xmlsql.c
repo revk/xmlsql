@@ -1,5 +1,5 @@
 // Copyright (c) 2004 Adrian Kennard
-// Licence granted to be used by any company while it has Adrian Kennard as shareholder
+// This software is provided under the terms of the GPL v2 or later.
 
 #include <err.h>
 #include <stdio.h>
