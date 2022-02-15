@@ -240,22 +240,84 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          {
             s = strchr(p, '\t');
             if (s)
-               p = strndup(p, (int) (s - p));
+               value = strndup(p, (int) (s - p));
             else
-               p = strdup(p);
+               value = strdup(p);
             free(malloced);
-            malloced = value = p;
+            malloced = value;
          }
       }
 
-      while (*suffix == ':' && isalpha(suffix[1]))
+      while (value && *suffix == ':' && isalpha(suffix[1]))
       {
          switch (suffix[1])
          {
-         case 'h':
-         case 't':
-         case 'e':
-         case 'r':
+         case 'h':             // head in path - remove all after last /
+            {
+               char *s = strrchr(value, '/');
+               if (s)
+               {
+                  if (value == malloced)
+                     *s = 0;
+                  else
+                  {
+                     value = strndup(value, (int) (s - value));
+                     free(malloced);
+                     malloced = value;
+                  }
+               }
+            }
+            break;
+         case 't':             // tail in path - everything from past last slash, or if no slash then unchanged
+            {
+               char *s = strrchr(value, '/');
+               if (s)
+               {
+                  if (!malloced)
+                     value = s + 1;
+                  else
+                  {
+                     value = strdup(s + 1);
+                     free(malloced);
+                     malloced = value;
+                  }
+               }
+            }
+            break;
+         case 'e':             // extension on file
+            {
+               char *s = strrchr(value, '/') ? : value;
+               s = strrchr(s, '.');
+               if (s)
+               {
+                  if (!malloced)
+                     value = s + 1;
+                  else
+                  {
+                     value = strdup(s + 1);
+                     free(malloced);
+                     malloced = value;
+                  }
+               } else value="";
+            }
+            break;
+         case 'r':             // remove extension on file
+            {
+               char *s = strrchr(value, '/') ? : value;
+               s = strrchr(s, '.');
+               if (s)
+               {
+                  if (value == malloced)
+                     *s = 0;
+                  else
+                  {
+                     value = strndup(value, (int) (s - value));
+                     free(malloced);
+                     malloced = value;
+                  }
+               }
+            }
+            break;
          default:
             return fail("Unknown : suffix");
          }
@@ -282,41 +344,41 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             fputc(q = '"', f);
             hash = 1;           // Ensures we close it
          }
-            if (!q)
-            {                   // Only allow numeric expansion
-               const char *v = value;
-               if (*v == '-')
+         if (!q)
+         {                      // Only allow numeric expansion
+            const char *v = value;
+            if (*v == '-')
+               v++;
+            if (!isdigit(*v))
+               v = NULL;
+            else
+            {
+               while (isdigit(*v))
                   v++;
-               if (!isdigit(*v))
-                  v = NULL;
-               else
+               if (*v == '.')
                {
+                  v++;
                   while (isdigit(*v))
                      v++;
-                  if (*v == '.')
-                  {
+               }
+               if (*v == 'e' || *v == 'E')
+               {
+                  v++;
+                  if (*v == '+' || *v == '-')
                      v++;
+                  if (!isdigit(*v))
+                     v = NULL;
+                  else
                      while (isdigit(*v))
                         v++;
-                  }
-                  if (*v == 'e' || *v == 'E')
-                  {
-                     v++;
-                     if (*v == '+' || *v == '-')
-                        v++;
-                     if (!isdigit(*v))
-                        v = NULL;
-                     else
-                        while (isdigit(*v))
-                           v++;
-                  }
-               }
-               if (!v || *v)
-               {
-                  warn = "Invalid number in $ expansion";
-                  value = (flags & SQLEXPANDZERO) ? "0" : "";
                }
             }
+            if (!v || *v)
+            {
+               warn = "Invalid number in $ expansion";
+               value = (flags & SQLEXPANDZERO) ? "0" : "";
+            }
+         }
          while (*value)
          {                      // Processed
             if (q && comma && (*value == ',' || *value == '\t'))
