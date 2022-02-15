@@ -132,6 +132,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             return fail("Bad [n] suffix");
          while (isdigit(*p))
             index = index * 10 + *p++ - '0';
+	 if(!index)return fail("[0] not valid");
          if (*p != ']')
             return fail("Unclosed [...");
          p++;
@@ -195,6 +196,11 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          if (!(flags & SQLEXPANDFILE))
             return fail("$@ not allowed");
          errx(1, "No $@ yet TODO");
+      }
+
+      if(index)
+      {
+	      errx(1,"No index yet - TODO");
       }
 
       while (*suffix == ':' && isalpha(suffix[1]))
