@@ -9,10 +9,11 @@
 <p>Immediately before the variable name (and inside <tt>{...}</tt> if present) can be a number of prefixes.</p>
 <table>
 	<tr><td><tt>#</tt></td><td>Add quotes around this if not in quotes already.</td></tr>
-	<tr><td><tt>,</tt></td><td>Add quotes around this if not in quotes, and add <tt>","</tt> at each comma or tab found in the expansion.</td></tr>
 	<tr><td><tt>@</tt></td><td>Consider the expanded value as a filename and read the value from that file.</td></tr>
-	<tr><td><tt>:</tt></td><td>URL encode the value.</td></tr>
 	<tr><td><tt>_</tt></td><td>Replace all <tt>'</tt>, <tt>"</tt> or <tt>`</tt> with <tt>_</tt> (underscore).</td></tr>
+	<tr><td><tt>,</tt></td><td>Add quotes around this if not in quotes, and add <tt>","</tt> at each comma or tab found in the expansion.</td></tr>
+	<tr><td><tt>:</tt></td><td>URL encode the value.</td></tr>
+	<tr><td><tt>#</tt></td><td>Made MD5 of value, use <tt>##</tt> for SHA1.</td></tr>
 	<tr><td><tt>%</tt></td><td>Trust this variable <b>(use with care)</b> so allowing expansion outside quotes as is with no escaping.</td></tr>
 	<tr><td><tt>=</tt></td><td>Base64 encode the value</td></tr>
 </table>
@@ -40,8 +41,8 @@
 <p>xmlsql uses alternative prefixes, as follows...</p>
 <table>
 	<tr><td><tt>-</tt></td><td>Replace all <tt>'</tt>, <tt>"</tt> or <tt>`</tt> with <tt>_</tt> (underscore).</td></tr>
-	<tr><td><tt>:</tt></td><td>URL encode the value.</td></tr>
 	<tr><td><tt>,</tt></td><td>Add quotes around this if not in quotes, and add <tt>","</tt> at each comma or tab found in the expansion.</td></tr>
+	<tr><td><tt>:</tt></td><td>URL encode the value.</td></tr>
 	<tr><td><tt>#</tt></td><td>Made MD5 of value, use <tt>##</tt> for SHA1.</td></tr>
 	<tr><td><tt>%</tt></td><td>Trust this variable <b>(use with care)</b> so allowing expansion outside quotes as is with no escaping.</td></tr>
         <tr><td><tt>=</tt></td><td>Base64 encode the value</td></tr>

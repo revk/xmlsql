@@ -126,7 +126,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          while (*p)
          {
             if (*p == '#')
-               quote++;
+               hash++;
             else if (*p == ',')
                list++;
             else if (*p == '@')
