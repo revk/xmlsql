@@ -94,21 +94,26 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       char curly = 0;
       if (*p == '{')
          curly = *p++;
-      char hash = 0,
-          comma = 0,
-          at = 0,
-          percent = 0;
+      char quote = 0,
+          list = 0,
+          file = 0,
+          literal = 0;
+      // TODO other ideas
+      // URL encoding
+      // MD5
+      // SHA1
+      // BASE64
       // Prefix
       while (*p)
       {
          if (*p == '#')
-            hash = 1;
+            quote = 1;
          else if (*p == ',')
-            comma = 1;
+            list = 1;
          else if (*p == '@')
-            at = 1;
+            file = 1;
          else if (*p == '%')
-            percent = 1;
+            literal = 1;
          else
             break;
          p++;
@@ -201,7 +206,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       } else
          value = getvar(name);
 
-      if (at && value)
+      if (file && value)
       {                         // File fetch
          if (!(flags & SQLEXPANDFILE))
             return fail("$@ not allowed");
@@ -298,7 +303,8 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
                      free(malloced);
                      malloced = value;
                   }
-               } else value="";
+               } else
+                  value = "";
             }
             break;
          case 'r':             // remove extension on file
@@ -319,30 +325,54 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             }
             break;
          default:
-            return fail("Unknown : suffix");
+            return fail("Unknown $...: suffix");
          }
          suffix += 2;
       }
+
+      // TODO possible further processing, sha, md5, etc, in future (after suffix as silly to do before)
+
       if (!value && !q && (flags & SQLEXPANDZERO))
          value = "0";
       if (!value && (flags & SQLEXPANDBLANK))
          value = "";
       if (!value)
+      {
          warn = "Missing variable";
-      else if (percent)
+         value = "";
+      }
+      if (literal)
       {                         // Output value (literal)
-         if (hash)
-            return fail("$% used with %#");
-         if (comma)
-            return fail("$% used with %,");
+         if (quote)
+            return fail("$% used with quote prefix");
+         if (list)
+            return fail("$% used with list prefix");
          while (*value)
+         {
+            if (*value == '\\')
+            {
+               fputc(*value++, f);
+               if (*value)
+                  fputc(*value++, f);
+               else
+               {
+                  fputc('\\', f);
+                  warn = "Trailing \\ in expansion";
+               }
+               continue;
+            }
+            if (q && *value == q)
+               q = 0;
+            else if (!q && (*value == '\'' || *value == '"' || *value == '`'))
+               q = *value;
             fputc(*value++, f);
+         }
       } else
       {                         // Output value (processed)
-         if (!q && (comma || hash))
+         if (!q && (list || quote))
          {
             fputc(q = '"', f);
-            hash = 1;           // Ensures we close it
+            quote = 1;          // Ensures we close it
          }
          if (!q)
          {                      // Only allow numeric expansion
@@ -381,7 +411,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          }
          while (*value)
          {                      // Processed
-            if (q && comma && (*value == ',' || *value == '\t'))
+            if (q && list && (*value == ',' || *value == '\t'))
             {
                fputc(q, f);
                fputc(',', f);
@@ -392,10 +422,13 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             if (*value == '\\')
             {                   // backslash is literal
                fputc(*value++, f);
-               if (!*value)
-                  fputc('\\', f);
-               else
+               if (*value)
                   fputc(*value++, f);
+               else
+               {
+                  fputc('\\', f);
+                  warn = "Trailing \\ in expansion";
+               }
                continue;
             }
             if (q && *value == q)
@@ -407,7 +440,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             }
             fputc(*value++, f);
          }
-         if (q && hash)
+         if (q && quote)
          {                      // Close
             fputc(q, f);
             q = 0;
@@ -419,6 +452,38 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
    if (q)
       return fail("Mismatched quotes");
    fclose(f);
+   // Check final query
+   p = expanded;
+   while (*p)
+   {
+      if (*p == '\\')
+      {
+         p++;
+         if (!*p)
+            warn = "Trailing \\ in expanded query";
+         else
+            p++;
+         continue;
+      }
+      if (q && *p == q)
+         q = 0;
+      else if (!q && (*p == '\'' || *p == '"' || *p == '`'))
+         q = *p;
+      else if (!q && (*p == '#' || (*p == '/' && p[1] == '*') || (*p == '-' && p[1] == '-' && (!p[2] || isspace(p[2])))))
+      {
+         free(expanded);
+         if (errp)
+            *errp = "Comment found in expanded query";
+         return NULL;
+      } else if (!q && *p == ';')
+      {
+         free(expanded);
+         if (errp)
+            *errp = "Semi colon found in expanded query";
+         return NULL;
+      }
+      p++;
+   }
    if (warn && errp)
       *errp = warn;
    return expanded;
