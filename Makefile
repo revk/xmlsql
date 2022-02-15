@@ -43,4 +43,4 @@ sqlexpand.o: sqlexpand.c Makefile
 	cc -c -o $@ $< ${OPTS} -DLIB
 
 sqlexpand: sqlexpand.c Makefile
-	cc -O -o $@ $< ${OPTS} -luuid
+	cc -O -o $@ $< ${OPTS} -luuid -lcrypto

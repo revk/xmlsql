@@ -16,6 +16,8 @@
 #include <ctype.h>
 #include <err.h>
 #include <uuid/uuid.h>
+#include <openssl/md5.h>
+#include <openssl/sha.h>
 #include "sqlexpand.h"
 
 // If success, returns malloced query string, and sets *errp to NULL
@@ -113,6 +115,10 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
                list++;
             else if (*p == '#')
                hash++;
+            else if (*p == '%')
+               literal++;
+            else if (*p == '=')
+               base64++;
             else
                break;
             p++;
@@ -133,6 +139,8 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
                underscore++;
             else if (*p == '=')
                base64++;
+            else if (*p == '*')
+               hash++;
             else
                break;
             p++;
@@ -145,8 +153,8 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       else if (curly)
          while (*e && *e != '}' && *e != ':')
             e++;                // In {...}
-      else if (isalpha(*e)||*e=='_')     // Simple
-         while (isalnum(*e)||*e=='_')
+      else if (isalpha(*e) || *e == '_')        // Simple
+         while (isalnum(*e) || *e == '_')
             e++;
       p = e;
       // Index
@@ -401,13 +409,33 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          malloced = value = new;
       }
 
-      if (hash)
-      {                         // Make a hash (hex or base64)
-
-      } else if (base64)
-      {                         // Base 64 code
+      void dobinary(void *buf, int l) { // Do a base64 or hex
 
       }
+
+      if (hash)
+      {                         // Make a hash (hex or base64)
+         if (hash == 1)
+         {                      // MD5
+            unsigned char md5buf[16];
+            MD5_CTX c;
+            MD5_Init(&c);
+            MD5_Update(&c, value, strlen(value));
+            MD5_Final(md5buf, &c);
+            dobinary(md5buf, sizeof(md5buf));
+         } else if (hash == 2)
+         {
+            unsigned char sha1buf[20];
+            SHA_CTX c;
+            SHA1_Init(&c);
+            SHA1_Update(&c, value, strlen(value));
+            SHA1_Final(sha1buf, &c);
+            dobinary(sha1buf, sizeof(sha1buf));
+
+         } else
+            return fail("Unknown hash to use");
+      } else if (base64)
+         dobinary(value, strlen(value));        // Base64
 
       if (!value && !q && (flags & SQLEXPANDZERO))
          value = "0";
@@ -415,7 +443,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          value = "";
       if (!value)
       {
-            warn = "Missing variable";
+         warn = "Missing variable";
          value = "";
       }
       if (literal)
