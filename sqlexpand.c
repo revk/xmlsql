@@ -104,26 +104,26 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
           hash = 0,
           base64 = 0,
           underscore = 0;
-         while (*p)
-         {
-            if (*p == '#')
-               hash++;
-            else if (*p == ',')
-               list++;
-            else if (*p == '*')
-               file++;
-            else if (*p == '%')
-               literal++;
-            else if (*p == '+')
-               url++;
-            else if (*p == '-')
-               underscore++;
-            else if (*p == '=')
-               base64++;
-            else
-               break;
-            p++;
-         }
+      while (*p)
+      {
+         if (*p == '#')
+            hash++;
+         else if (*p == ',')
+            list++;
+         else if (*p == '*')
+            file++;
+         else if (*p == '%')
+            literal++;
+         else if (*p == '+')
+            url++;
+         else if (*p == '-')
+            underscore++;
+         else if (*p == '=')
+            base64++;
+         else
+            break;
+         p++;
+      }
       // Variable
       const char *s = p,
           *e = p;               // The variable name
@@ -601,6 +601,13 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          return NULL;
       }
       p++;
+   }
+   if (q)
+   {
+      free(expanded);
+      if (errp)
+         *errp = "Unclosed quoting in expanded query";
+      return NULL;
    }
    if (warn && errp)
       *errp = warn;
