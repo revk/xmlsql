@@ -9,6 +9,8 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -27,10 +29,10 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       getvar = getenv;          // Default
    const char *warn = NULL;
    char *expanded = NULL;
-   char *malloced = NULL;
+   char *malloced = NULL;       // For when variable is malloced
    size_t len;
    FILE *f = open_memstream(&expanded, &len);
-   char *fail(const char *e) {  // For direct exit
+   char *fail(const char *e) {  // For direct exit with error
       fclose(f);
       free(expanded);
       free(malloced);
@@ -132,7 +134,8 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             return fail("Bad [n] suffix");
          while (isdigit(*p))
             index = index * 10 + *p++ - '0';
-	 if(!index)return fail("[0] not valid");
+         if (!index)
+            return fail("[0] not valid");
          if (*p != ']')
             return fail("Unclosed [...");
          p++;
@@ -171,7 +174,14 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       {
          if (!(flags & SQLEXPANDSTDIN))
             return fail("$- not allowed");
-         errx(1, "Not doing stdin yet - TODO");
+         size_t len,
+          got;
+         FILE *o = open_memstream(&malloced, &len);
+         char buf[16384];
+         while ((got = read(fileno(stdin), buf, sizeof(buf))) > 0)
+            fwrite(buf, got, 1, o);
+         fclose(o);
+         value = malloced;
       } else if (!strcmp(name, "/"))
       {                         // Literal '
          if (q == '\'')
@@ -195,12 +205,47 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       {                         // File fetch
          if (!(flags & SQLEXPANDFILE))
             return fail("$@ not allowed");
-         errx(1, "No $@ yet TODO");
+         if (strstr(value, "/etc/"))
+            return fail("Not playing that game, file is has /etc/");
+         int i = open(value, O_RDONLY);
+         if (i >= 0)
+         {
+            size_t len,
+             got;
+            FILE *o = open_memstream(&malloced, &len);
+            char buf[16384];
+            while ((got = read(i, buf, sizeof(buf))) > 0)
+               fwrite(buf, got, 1, o);
+            fclose(o);
+            close(i);
+            value = malloced;
+         }
       }
 
-      if(index)
+      if (index && value)
       {
-	      errx(1,"No index yet - TODO");
+         char *p = value,
+             *s = NULL;;
+         while (p && --index)
+         {
+            s = strchr(p, '\t');
+            if (s)
+               p = s + 1;
+            else
+               p = NULL;
+         }
+         if (index || !p)
+            value = "";
+         else
+         {
+            s = strchr(p, '\t');
+            if (s)
+               p = strndup(p, (int) (s - p));
+            else
+               p = strdup(p);
+            free(malloced);
+            malloced = value = p;
+         }
       }
 
       while (*suffix == ':' && isalpha(suffix[1]))
@@ -237,6 +282,41 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             fputc(q = '"', f);
             hash = 1;           // Ensures we close it
          }
+            if (!q)
+            {                   // Only allow numeric expansion
+               const char *v = value;
+               if (*v == '-')
+                  v++;
+               if (!isdigit(*v))
+                  v = NULL;
+               else
+               {
+                  while (isdigit(*v))
+                     v++;
+                  if (*v == '.')
+                  {
+                     v++;
+                     while (isdigit(*v))
+                        v++;
+                  }
+                  if (*v == 'e' || *v == 'E')
+                  {
+                     v++;
+                     if (*v == '+' || *v == '-')
+                        v++;
+                     if (!isdigit(*v))
+                        v = NULL;
+                     else
+                        while (isdigit(*v))
+                           v++;
+                  }
+               }
+               if (!v || *v)
+               {
+                  warn = "Invalid number in $ expansion";
+                  value = (flags & SQLEXPANDZERO) ? "0" : "";
+               }
+            }
          while (*value)
          {                      // Processed
             if (q && comma && (*value == ',' || *value == '\t'))
@@ -335,7 +415,7 @@ int main(int argc, const char *argv[])
    if (!dosafe)
       flags |= SQLEXPANDUNSAFE;
    const char *e = NULL;
-   char *expanded = sqlexpand(query, getenv, &e, 0);
+   char *expanded = sqlexpand(query, getenv, &e, flags);
    if (!expanded)
       errx(1, "Failed SQL expand: %s\n[%s]\n", e, query);
    printf("%s", expanded);
