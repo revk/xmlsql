@@ -97,37 +97,56 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       char quote = 0,
           list = 0,
           file = 0,
-          literal = 0;
-      // TODO other ideas
-      // URL encoding
-      // MD5
-      // SHA1
-      // BASE64
-      // Prefix
-      while (*p)
-      {
-         if (*p == '#')
-            quote = 1;
-         else if (*p == ',')
-            list = 1;
-         else if (*p == '@')
-            file = 1;
-         else if (*p == '%')
-            literal = 1;
-         else
-            break;
-         p++;
-      }
+          literal = 0,
+          url = 0,
+          hash = 0,
+          base64 = 0,
+          underscore = 0;
+      if (flags & SQLEXPANDXMLSQL)
+         while (*p)
+         {
+            if (*p == '+')
+               url++;
+            else if (*p == '-')
+               underscore++;
+            else if (*p == ',')
+               list++;
+            else if (*p == '#')
+               hash++;
+            else
+               break;
+            p++;
+      } else
+         while (*p)
+         {
+            if (*p == '#')
+               quote++;
+            else if (*p == ',')
+               list++;
+            else if (*p == '@')
+               file++;
+            else if (*p == '%')
+               literal++;
+            else if (*p == ':')
+               url++;
+            else if (*p == '_')
+               underscore++;
+            else if (*p == '=')
+               base64++;
+            else
+               break;
+            p++;
+         }
       // Variable
       const char *s = p,
           *e = p;               // The variable name
-      if (strchr("+$-/\\", *e))
+      if (strchr("+$-/\\@", *e))
          e++;                   // Special
       else if (curly)
          while (*e && *e != '}' && *e != ':')
             e++;                // In {...}
-      else if (isalpha(*e))     // Broken
-         while (isalnum(*e))
+      else if (isalpha(*e)||*e=='_')     // Simple
+         while (isalnum(*e)||*e=='_')
             e++;
       p = e;
       // Index
@@ -170,11 +189,28 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          value = malloced;
       } else if (!strcmp(name, "$"))
       {
-         if (!(flags & SQLEXPANDPPID))
-            return fail("$$ not allowed");
-         if (asprintf(&malloced, "%d", getppid()) < 0)
-            err(1, "malloc");
-         value = malloced;
+         if (flags & SQLEXPANDXMLSQL)
+         {                      // Literal $
+            fputc('$', f);
+            value = "";
+         } else
+         {
+            if (!(flags & SQLEXPANDPPID))
+               return fail("$$ not allowed");
+            if (asprintf(&malloced, "%d", getppid()) < 0)
+               err(1, "malloc");
+            value = malloced;
+         }
+      } else if (!strcmp(name, "@"))
+      {                         // Cache feature id
+         struct stat s = { };
+         time_t when = 0;
+         if (!stat(".", &s))
+            when = s.st_mtime;
+         else
+            when = time(0);
+         if (asprintf(&malloced, "%ld", when) < 0)
+            value = malloced;
       } else if (!strcmp(name, "-"))
       {
          if (!(flags & SQLEXPANDSTDIN))
@@ -330,7 +366,48 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          suffix += 2;
       }
 
-      // TODO possible further processing, sha, md5, etc, in future (after suffix as silly to do before)
+      if (underscore)
+      {
+         if (!malloced)
+            value = malloced = strdup(value);
+         for (char *p = value; *p; p++)
+            if (*p == '\'' || *p == '"' || *p == '`')
+               *p = '_';
+      }
+
+      if (url)
+      {                         // URL encode
+         char *new;
+         size_t l;
+         FILE *o = open_memstream(&new, &l);
+         char *v = value;
+         while (*v)
+         {
+            if (*v == ' ' && url == 1)
+               fputc('+', o);
+            else if (*v <= ' ' || strchr("+=%\"'&<>?#!", *v) || (url > 1 && *v == '/'))
+            {
+               fputc('%', o);
+               int u = url;
+               while (u-- > 1)
+                  fprintf(o, "25");
+               fprintf(o, "%02X", *v);
+            } else
+               fputc(*v, o);
+            v++;
+         }
+         fclose(o);
+         free(malloced);
+         malloced = value = new;
+      }
+
+      if (hash)
+      {                         // Make a hash (hex or base64)
+
+      } else if (base64)
+      {                         // Base 64 code
+
+      }
 
       if (!value && !q && (flags & SQLEXPANDZERO))
          value = "0";
@@ -338,7 +415,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          value = "";
       if (!value)
       {
-         warn = "Missing variable";
+            warn = "Missing variable";
          value = "";
       }
       if (literal)
@@ -497,6 +574,7 @@ int main(int argc, const char *argv[])
    int dosafe = 0;
    int dozero = 0;
    int doblank = 0;
+   int doxmlsql = 0;
    const char *query = NULL;
    {                            // POPT
       poptContext optCon;       // context for parsing command-line options
@@ -506,6 +584,7 @@ int main(int argc, const char *argv[])
          { "safe", 0, POPT_ARG_NONE, &dosafe, 0, "Do not allow ($%)" },
          { "zero", 0, POPT_ARG_NONE, &dozero, 0, "Do 0 for missing unquoted expansion" },
          { "blank", 0, POPT_ARG_NONE, &doblank, 0, "Allow blank for missing expansion" },
+         { "xmlsql", 0, POPT_ARG_NONE, &doxmlsql, 0, "Use xmlsql prefixes" },
          POPT_AUTOHELP { }
       };
 
@@ -539,6 +618,8 @@ int main(int argc, const char *argv[])
       flags |= SQLEXPANDZERO;
    if (doblank)
       flags |= SQLEXPANDBLANK;
+   if (doxmlsql)
+      flags |= SQLEXPANDXMLSQL;
    if (!dosafe)
       flags |= SQLEXPANDUNSAFE;
    const char *e = NULL;

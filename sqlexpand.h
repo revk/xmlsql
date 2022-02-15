@@ -16,4 +16,5 @@ typedef char *sqlexpandgetvar_t(const char *);
 // If success, returns malloced query string, and sets *errp to NULL
 // If success but warning, returns malloced query string, and sets *errp to warning text 
 // If failure, returns NULL, and sets *errp to error text
+// If $? is used and variable does not exist return is NULL and error set to NULL
 char *sqlexpand(const char *query,sqlexpandgetvar_t *getvar,const char **errp,unsigned int flags);
