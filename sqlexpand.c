@@ -92,9 +92,25 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       char curly = 0;
       if (*p == '{')
          curly = *p++;
+      char hash = 0,
+          comma = 0,
+          at = 0,
+          percent = 0;
       // Prefix
-      // TODO
-
+      while (*p)
+      {
+         if (*p == '#')
+            hash = 1;
+         else if (*p == ',')
+            comma = 1;
+         else if (*p == '@')
+            at = 1;
+         else if (*p == '%')
+            percent = 1;
+         else
+            break;
+         p++;
+      }
       // Variable
       const char *s = p,
           *e = p;               // The variable name
@@ -107,8 +123,23 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          while (isalnum(*e))
             e++;
       p = e;
+      // Index
+      int index = 0;
+      if (*p == '[')
+      {
+         p++;
+         if (!isdigit(*p))
+            return fail("Bad [n] suffix");
+         while (isdigit(*p))
+            index = index * 10 + *p++ - '0';
+         if (*p != ']')
+            return fail("Unclosed [...");
+         p++;
+      }
       // Suffix
-      // TODO
+      const char *suffix = p;
+      while (*p == ':' && isalpha(p[1]))
+         p += 2;
       // End
       if (curly && *p++ != '}')
          return fail("Unclosed ${...");
@@ -141,26 +172,99 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             return fail("$- not allowed");
          errx(1, "Not doing stdin yet - TODO");
       } else if (!strcmp(name, "/"))
-         value = "'";
-      else if (!strcmp(name, "\\"))
-         value = "`";
-      else
+      {                         // Literal '
+         if (q == '\'')
+            q = 0;
+         else if (!q)
+            q = '\'';
+         fputc('\'', f);
+         value = "";
+      } else if (!strcmp(name, "\\"))
+      {                         // Literal `
+         if (q == '`')
+            q = 0;
+         else if (!q)
+            q = '`';
+         fputc('`', f);
+         value = "";
+      } else
          value = getvar(name);
 
+      if (at && value)
+      {                         // File fetch
+         if (!(flags & SQLEXPANDFILE))
+            return fail("$@ not allowed");
+         errx(1, "No $@ yet TODO");
+      }
+
+      while (*suffix == ':' && isalpha(suffix[1]))
+      {
+         switch (suffix[1])
+         {
+         case 'h':
+         case 't':
+         case 'e':
+         case 'r':
+         default:
+            return fail("Unknown : suffix");
+         }
+         suffix += 2;
+      }
       if (!value && !q && (flags & SQLEXPANDZERO))
          value = "0";
       if (!value && (flags & SQLEXPANDBLANK))
          value = "";
       if (!value)
          warn = "Missing variable";
-      else
+      else if (percent)
+      {                         // Output value (literal)
+         if (hash)
+            return fail("$% used with %#");
+         if (comma)
+            return fail("$% used with %,");
          while (*value)
-         {                      // Simple for now - TODO
-            if ((q && *value == q) || *value == '\\')
+            fputc(*value++, f);
+      } else
+      {                         // Output value (processed)
+         if (!q && (comma || hash))
+         {
+            fputc(q = '"', f);
+            hash = 1;           // Ensures we close it
+         }
+         while (*value)
+         {                      // Processed
+            if (q && comma && (*value == ',' || *value == '\t'))
+            {
                fputc(q, f);
+               fputc(',', f);
+               fputc(q, f);
+               value++;
+               continue;
+            }
+            if (*value == '\\')
+            {                   // backslash is literal
+               fputc(*value++, f);
+               if (!*value)
+                  fputc('\\', f);
+               else
+                  fputc(*value++, f);
+               continue;
+            }
+            if (q && *value == q)
+            {                   // Quoted
+               fputc(q, f);
+               fputc(q, f);
+               value++;
+               continue;
+            }
             fputc(*value++, f);
          }
-
+         if (q && hash)
+         {                      // Close
+            fputc(q, f);
+            q = 0;
+         }
+      }
       free(name);
       free(malloced);
    }
