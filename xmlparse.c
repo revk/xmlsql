@@ -144,7 +144,7 @@ xmltoken *xmlparse(char *h, char *filename)
                         if (val)
                         {
                            hwas = h;
-                           h = val;
+                           h = strdupa(val);
                         }
                         continue;
                      }
