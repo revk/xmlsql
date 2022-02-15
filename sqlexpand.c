@@ -104,32 +104,13 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
           hash = 0,
           base64 = 0,
           underscore = 0;
-      if (flags & SQLEXPANDXMLSQL)
-         while (*p)
-         {
-            if (*p == '+')
-               url++;
-            else if (*p == ',')
-               list++;
-            else if (*p == '#')
-               hash++;
-            else if (*p == '%')
-               literal++;
-            else if (*p == '-')
-               underscore++;
-            else if (*p == '=')
-               base64++;
-            else
-               break;
-            p++;
-      } else
          while (*p)
          {
             if (*p == '#')
                hash++;
             else if (*p == ',')
                list++;
-            else if (*p == '@')
+            else if (*p == '*')
                file++;
             else if (*p == '%')
                literal++;
