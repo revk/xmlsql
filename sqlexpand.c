@@ -109,14 +109,14 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          {
             if (*p == '+')
                url++;
-            else if (*p == '-')
-               underscore++;
             else if (*p == ',')
                list++;
             else if (*p == '#')
                hash++;
             else if (*p == '%')
                literal++;
+            else if (*p == '-')
+               underscore++;
             else if (*p == '=')
                base64++;
             else
@@ -133,9 +133,9 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
                file++;
             else if (*p == '%')
                literal++;
-            else if (*p == ':')
+            else if (*p == '+')
                url++;
-            else if (*p == '_')
+            else if (*p == '-')
                underscore++;
             else if (*p == '=')
                base64++;
@@ -146,7 +146,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       // Variable
       const char *s = p,
           *e = p;               // The variable name
-      if (strchr("+$-/\\@<", *e))
+      if (strchr("$/\\@<", *e))
          e++;                   // Special one letter variable name
       else if (curly)
          while (*e && *e != '}' && *e != ':')
@@ -185,15 +185,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
 
       // Get value
       char *value = NULL;
-      if (!name[1] && *name == '+')
-      {
-         if (!(malloced = malloc(UUID_STR_LEN + 1)))
-            errx(1, "malloc");
-         uuid_t u;
-         uuid_generate(u);
-         uuid_unparse(u, malloced);
-         value = malloced;
-      } else if (!name[1] && *name == '$')
+      if (!name[1] && *name == '$')
       {
          if (flags & SQLEXPANDXMLSQL)
          {                      // Literal $
@@ -217,7 +209,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             when = time(0);
          if (asprintf(&malloced, "%ld", when) < 0)
             value = malloced;
-      } else if (!name[1] && (*name == '-' || *name == '<'))
+      } else if (!name[1] && *name == '<')
       {
          if (!(flags & SQLEXPANDSTDIN))
             return fail("$- not allowed");
