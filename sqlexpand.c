@@ -139,8 +139,6 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
                underscore++;
             else if (*p == '=')
                base64++;
-            else if (*p == '*')
-               hash++;
             else
                break;
             p++;
@@ -409,8 +407,50 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          malloced = value = new;
       }
 
-      void dobinary(void *buf, int l) { // Do a base64 or hex
-
+      void dobinary(void *buf, int len) {       // Do a base64 or hex
+         char *new;
+         size_t l;
+         FILE *o = open_memstream(&new, &l);
+         unsigned char *p = buf,
+             *e = p + len;
+         if (base64)
+         {
+            const char BASE64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+            unsigned int b = 0,
+                v = 0;
+            while (p < e)
+            {
+               b += 8;
+               v = (v << 8) + *p++;
+               while (b >= 6)
+               {
+                  b -= 6;
+                  fputc(BASE64[(v >> b) & ((1 << 6) - 1)], o);
+               }
+            }
+            if (b)
+            {                   // final bits
+               b += 8;
+               v <<= 8;
+               b -= 6;
+               fputc(BASE64[(v >> b) & ((1 << 6) - 1)], o);
+               while (b)
+               {                // padding
+                  while (b >= 6)
+                  {
+                     b -= 6;
+                     fputc('=', o);
+                  }
+                  if (b)
+                     b += 8;
+               }
+            }
+         } else
+            while (p < e)
+               fprintf(o, "%02x", *p++);
+         fclose(o);
+         free(malloced);
+         malloced = value = new;
       }
 
       if (hash)
