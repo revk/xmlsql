@@ -9,6 +9,8 @@ typedef char *sqlexpandgetvar_t(const char *);
 #define	SQLEXPANDFILE		2	// Handle $@ file
 #define	SQLEXPANDUNSAFE		4	// Handle $% unsafe expansion
 #define	SQLEXPANDPPID 		8	// Handle $$ as parent pid
+#define	SQLEXPANDZERO		16	// Handle missing unquoted expansion as a number (0)
+#define	SQLEXPANDBLANK		32	// Handle missing expansion as a blank (no error or warning)
 
 // If success, returns malloced query string, and sets *errp to NULL
 // If success but warning, returns malloced query string, and sets *errp to warning text 
