@@ -5,7 +5,12 @@
 
 typedef char *sqlexpandgetvar_t(const char *);
 
+#define	SQLEXPANDSTDIN		1	// Handle $- as stdin
+#define	SQLEXPANDFILE		2	// Handle $@ file
+#define	SQLEXPANDUNSAFE		4	// Handle $% unsafe expansion
+#define	SQLEXPANDPPID 		8	// Handle $$ as parent pid
+
 // If success, returns malloced query string, and sets *errp to NULL
 // If success but warning, returns malloced query string, and sets *errp to warning text 
 // If failure, returns NULL, and sets *errp to error text
-char *sqlexpand(const char *query,sqlexpandgetvar_t *getvar,const char **errp);
+char *sqlexpand(const char *query,sqlexpandgetvar_t *getvar,const char **errp,unsigned int flags);

@@ -1,6 +1,7 @@
 <h1>SQL expansion</h1>
 <p>The command <tt>sqlexpand</tt> can be used to expand environment variables within an SQL query in a safe way (i.e. handling embedded quotes).</p>
 <p>The library <tt>sqlexpand.o</tt> can be used in other tools to achieve the same objective.</p>
+<p>Note that some options are enabled / disabled by flags on the <tt>sqlexpand</tt> command, see <tt>--help</tt> for details.</p>
 <h2>Simple expansion</h2>
 <p>The simplest expansion is just <tt>$</tt> followed by a variable name (starts as a letter then letters or number).</p>
 <p>However, if the next thing is a latter or number you can include the name in curly braces, e.g <tt>${<i>variable</i>}</tt>.</p>

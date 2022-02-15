@@ -16,7 +16,7 @@
 // If success, returns malloced query string, and sets *errp to NULL
 // If success but warning, returns malloced query string, and sets *errp to warning text 
 // If failure, returns NULL, and sets *errp to error text
-char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp)
+char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp, unsigned int flags)
 {
    if (errp)
       *errp = NULL;
@@ -106,10 +106,16 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
 #ifndef LIB
 int main(int argc, const char *argv[])
 {                               // Command line tool
+   int dostdin = 0;
+   int dofile = 0;
+   int dosafe = 0;
    const char *query = NULL;
    {                            // POPT
       poptContext optCon;       // context for parsing command-line options
       const struct poptOption optionsTable[] = {
+         { "stdin", 0, POPT_ARG_NONE, &dostdin, 0, "Allow stdin ($-)" },
+         { "file", 0, POPT_ARG_NONE, &dofile, 0, "Allow file ($@)" },
+         { "safe", 0, POPT_ARG_NONE, &dosafe, 0, "Do not allow ($%)" },
          POPT_AUTOHELP { }
       };
 
@@ -134,8 +140,15 @@ int main(int argc, const char *argv[])
       poptFreeContext(optCon);
    }
 
+   unsigned int flags = 0;
+   if (dostdin)
+      flags |= SQLEXPANDSTDIN;
+   if (dofile)
+      flags |= SQLEXPANDFILE;
+   if (!dosafe)
+      flags |= SQLEXPANDUNSAFE;
    const char *e = NULL;
-   char *expanded = sqlexpand(query, getenv, &e);
+   char *expanded = sqlexpand(query, getenv, &e, 0);
    if (!expanded)
       errx(1, "Failed SQL expand: %s\n[%s]\n", e, query);
    printf("%s", expanded);
