@@ -8,11 +8,10 @@
 <h2>Prefix</h2>
 <p>Immediately before the variable name (and inside <tt>{...}</tt> if present) can be a number of prefixes.</p>
 <table>
-	<tr><td><tt>#</tt></td><td>Add quotes around this if not in quotes already.</td></tr>
 	<tr><td><tt>@</tt></td><td>Consider the expanded value as a filename and read the value from that file.</td></tr>
-	<tr><td><tt>_</tt></td><td>Replace all <tt>'</tt>, <tt>"</tt> or <tt>`</tt> with <tt>_</tt> (underscore).</td></tr>
+	<tr><td><tt>_</tt> (to be <tt>-</tt>)</td><td>Replace all <tt>'</tt>, <tt>"</tt> or <tt>`</tt> with <tt>_</tt> (underscore).</td></tr>
 	<tr><td><tt>,</tt></td><td>Add quotes around this if not in quotes, and add <tt>","</tt> at each comma or tab found in the expansion.</td></tr>
-	<tr><td><tt>:</tt></td><td>URL encode the value.</td></tr>
+	<tr><td><tt>:</tt> (to be <tt>+</tt>))</td><td>URL encode the value.</td></tr>
 	<tr><td><tt>#</tt></td><td>Made MD5 of value, use <tt>##</tt> for SHA1.</td></tr>
 	<tr><td><tt>%</tt></td><td>Trust this variable <b>(use with care)</b> so allowing expansion outside quotes as is with no escaping.</td></tr>
 	<tr><td><tt>=</tt></td><td>Base64 encode the value</td></tr>
@@ -21,9 +20,9 @@
 <h2>Special variable</h2>
 <p>Instead of the variable name itself there are some special variables.</p>
 <table>
-	<tr><td><tt>+</tt></td><td>Generate a UUID</td></tr>
-	<tr><td><tt>$</tt></td><td>Generate the parent PID</td></tr>
-	<tr><td><tt>-</tt></td><td>Read stdin</td></tr>
+	<tr><td><tt>+</tt> (to be <tt>@</tt>)</tt></td><td>Generate a UUID</td></tr>
+	<tr><td><tt>$</tt> (to be scrapped)</td><td>Generate the parent PID</td></tr>
+	<tr><td><tt>-</tt> (to be <tt>&lt;</tt>)</td><td>Read stdin</td></tr>
 	<tr><td><tt>\</tt></td><td>Generate a back tick (so starts/ends back tick quoting if used outside other quotes).</td></tr>
 	<tr><td><tt>/</tt></td><td>Generate a single quote (so starts/ends single quoting if used outside other quotes).</td></tr>
 </table>
@@ -42,14 +41,14 @@
 <table>
 	<tr><td><tt>-</tt></td><td>Replace all <tt>'</tt>, <tt>"</tt> or <tt>`</tt> with <tt>_</tt> (underscore).</td></tr>
 	<tr><td><tt>,</tt></td><td>Add quotes around this if not in quotes, and add <tt>","</tt> at each comma or tab found in the expansion.</td></tr>
-	<tr><td><tt>:</tt></td><td>URL encode the value.</td></tr>
+	<tr><td><tt>+</tt></td><td>URL encode the value.</td></tr>
 	<tr><td><tt>#</tt></td><td>Made MD5 of value, use <tt>##</tt> for SHA1.</td></tr>
 	<tr><td><tt>%</tt></td><td>Trust this variable <b>(use with care)</b> so allowing expansion outside quotes as is with no escaping.</td></tr>
         <tr><td><tt>=</tt></td><td>Base64 encode the value</td></tr>
 </table>
 <p>xmlsql uses alternative special variables, as follows...</p>
 <table>
-	<tr><td><tt>@</tt></td><td>Create a reference for cache (timestamp of current directory)</td></tr>
+	<tr><td><tt>@</tt></td><td>Create a reference for cache (timestamp of current directory) (to be changed to UUID format)</td></tr>
 	<tr><td><tt>$</tt></td><td>Literal <tt>$</tt></td></tr>
 	<tr><td><tt>\</tt></td><td>Generate a back tick (so starts/ends back tick quoting if used outside other quotes).</td></tr>
 	<tr><td><tt>/</tt></td><td>Generate a single quote (so starts/ends single quoting if used outside other quotes).</td></tr>

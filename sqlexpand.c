@@ -146,8 +146,8 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       // Variable
       const char *s = p,
           *e = p;               // The variable name
-      if (strchr("+$-/\\@", *e))
-         e++;                   // Special
+      if (strchr("+$-/\\@<", *e))
+         e++;                   // Special one letter variable name
       else if (curly)
          while (*e && *e != '}' && *e != ':')
             e++;                // In {...}
@@ -185,7 +185,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
 
       // Get value
       char *value = NULL;
-      if (!strcmp(name, "+"))
+      if (!name[1] && *name == '+')
       {
          if (!(malloced = malloc(UUID_STR_LEN + 1)))
             errx(1, "malloc");
@@ -193,7 +193,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          uuid_generate(u);
          uuid_unparse(u, malloced);
          value = malloced;
-      } else if (!strcmp(name, "$"))
+      } else if (!name[1] && *name == '$')
       {
          if (flags & SQLEXPANDXMLSQL)
          {                      // Literal $
@@ -207,7 +207,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
                err(1, "malloc");
             value = malloced;
          }
-      } else if (!strcmp(name, "@"))
+      } else if (!name[1] && *name == '@')
       {                         // Cache feature id
          struct stat s = { };
          time_t when = 0;
@@ -217,7 +217,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             when = time(0);
          if (asprintf(&malloced, "%ld", when) < 0)
             value = malloced;
-      } else if (!strcmp(name, "-"))
+      } else if (!name[1] && (*name == '-' || *name == '<'))
       {
          if (!(flags & SQLEXPANDSTDIN))
             return fail("$- not allowed");
@@ -229,7 +229,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             fwrite(buf, got, 1, o);
          fclose(o);
          value = malloced;
-      } else if (!strcmp(name, "/"))
+      } else if (!name[1] && *name == '/')
       {                         // Literal '
          if (q == '\'')
             q = 0;
@@ -237,7 +237,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             q = '\'';
          fputc('\'', f);
          value = "";
-      } else if (!strcmp(name, "\\"))
+      } else if (!name[1] && *name == '\\')
       {                         // Literal `
          if (q == '`')
             q = 0;
