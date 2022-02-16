@@ -2877,7 +2877,9 @@ xmltoken *doeval(xmltoken * x, process_t * state)
             char *va = expand(tempa, sizeof(tempa), x->attr[a].attribute);
             char temp[MAXTEMP];
             char *v = expandz(temp, sizeof(temp), x->attr[a].value);
-            if (v)
+	    if(!va)warnx("Failed to expand: %s",x->attr[a].attribute);
+	    else if(!v)warnx("Failed to expand: %s",x->attr[a].value);
+	    else
             {
              char *e = stringdecimal_eval(v, format: format, places: places, round:round);
                if (!debug && !comment && (!e || *e == '!') && !def)
@@ -2964,7 +2966,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
          query = malloc(l);
          if (!query)
             errx(1, "malloc at line %d", __LINE__);
-#define qadd(s)	{int n=strlen(s);if(p+n+1>=l&&!(query=realloc(query,(l=p+n+100))))errx(1,"malloc");memmove(query+p,s,n+1);p+=n;}
+#define qadd(s)	do{if(s){int n=strlen(s);if(p+n+1>=l&&!(query=realloc(query,(l=p+n+100))))errx(1,"malloc");memmove(query+p,s,n+1);p+=n;}}while(0)
          xmlattr *desc = xmlfindattr(x, "DESC");
          xmlattr *asc = xmlfindattr(x, "ASC");
          xmlattr *distinct = xmlfindattr(x, "DISTINCT");
@@ -2997,6 +2999,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             if (asc)
                warning(x, "QUERY and ASC in SQL");
             v = expand(temp, sizeof(temp), litquery);
+	    if(!v)warnx("Failed to expand: %s",litquery);
             qadd(v);
          } else
          {                      // construct query
@@ -3052,6 +3055,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             free(v);
 #else
             v = expand(temp, sizeof(temp), q);
+	    if(!v)warnx("Failed to expand: %s",q);
             qadd(v);
 #endif
             free(q);
