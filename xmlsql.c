@@ -2902,80 +2902,6 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                warning(x, "DESC with no ORDER in SQL");
                return x->end->next;
             };
-#if 0
-            // Expand as we go
-            qadd("SELECT ");
-            if (distinct)
-               qadd("DISTINCT ");
-            v = expand(temp, sizeof(temp), select);
-            qadd((v && *v) ? v : "*");
-            v = expand(temp, sizeof(temp), table);
-            if (v && *v)
-            {
-               qadd(" FROM ");
-               qadd(v);
-            }
-            if (where)
-            {
-               v = expand(temp, sizeof(temp), where);
-               if (v && *v)
-               {
-                  qadd(" WHERE ");
-                  qadd(v);
-               }
-            }
-            if (key && key->value)
-            {
-               char *v = strrchr(key->value, '.');
-               v = getvar(v ? : key->value, 0);
-               qadd(" WHERE ");
-               qadd(key->value);
-               qadd("=\"");
-               if (v)
-                  qadd(v);
-               qadd("\"");
-            }
-            if (group)
-            {
-               v = expand(temp, sizeof(temp), group);
-               if (v && *v)
-               {
-                  qadd(" GROUP BY ");
-                  qadd(v);
-               }
-            }
-            if (having)
-            {
-               v = expand(temp, sizeof(temp), having);
-               if (v && *v)
-               {
-                  qadd(" HAVING ");
-                  qadd(v);
-               }
-            }
-            if (order)
-            {
-               v = expand(temp, sizeof(temp), order);
-               if (v && *v)
-               {
-                  qadd(" ORDER BY ");
-                  qadd(v);
-                  if (desc)
-                     qadd(" DESC");
-                  if (asc)
-                     qadd(" ASC");
-               }
-            }
-            if (limit)
-            {
-               v = expand(temp, sizeof(temp), limit);
-               if (v && *v)
-               {
-                  qadd(" LIMIT ");
-                  qadd(v);
-               }
-            }
-#else
             // Construct then expand
             char *q;
             size_t l;
@@ -3012,6 +2938,8 @@ xmltoken *dosql(xmltoken * x, process_t * state)
 #if 1
             const char *e;
             v = sqlexpand(q, getvarexpand, &e, SQLEXPANDPPID | SQLEXPANDZERO | SQLEXPANDBLANK | SQLEXPANDUNSAFE);
+            if (e)
+               warnx("Expansion: %s\n[%s]\n[%s]", e, q, v);
             qadd(v);
             free(v);
 #else
@@ -3019,7 +2947,6 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             qadd(v);
 #endif
             free(q);
-#endif
          }
 #undef qadd
          {                      // Sanity check
