@@ -2962,7 +2962,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
          if ((json && json->value) || (jsarray && jsarray->value) || (tablerow && tablerow->value))
             out = open_memstream(&outdata, &outsize);
          char temp[MAXTEMP];
-         int l = 1000,
+         int l = 2000,
              p = 0;
          char *v;
          query = malloc(l);
