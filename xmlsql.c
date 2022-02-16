@@ -2939,7 +2939,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             const char *e;
             v = sqlexpand(q, getvarexpand, &e, SQLEXPANDPPID | SQLEXPANDZERO | SQLEXPANDBLANK | SQLEXPANDUNSAFE);
             if (e)
-               warnx("Expansion: %s\n[%s]\n[%s]", e, q, v);
+               fprintf(stderr, "%s:%d Expansion: %s\n[%s]\n[%s]", x->filename, x->line, e, q, v);
             qadd(v);
             free(v);
 #else
