@@ -421,7 +421,7 @@ char *expandd(char *buf, int len, const char *i, char sum)
 #endif
           )
       {
-#if 1
+#if 0
          const char *e;
          dollar_expand_t *d = NULL;
          char *fail(const char *e) {
@@ -512,10 +512,10 @@ char *expandd(char *buf, int len, const char *i, char sum)
          }
          dollar_expand_free(&d);
 #else
-         char *n,
-         *e,
+         const char *n,
          *v,
-          url = 0,
+         *e;
+         char url = 0,
              hash = 0,
              query = 0,
              safe = 0,
@@ -582,9 +582,9 @@ char *expandd(char *buf, int len, const char *i, char sum)
          }
          {
             char t = *e;
-            *e = 0;
+            *(char *) e = 0;
             v = getvar(n, 0);
-            *e = t;
+            *(char *) e = t;
          }
          if (!v && query)
             return NULL;        // expand fails as variable does not exist
@@ -2877,9 +2877,11 @@ xmltoken *doeval(xmltoken * x, process_t * state)
             char *va = expand(tempa, sizeof(tempa), x->attr[a].attribute);
             char temp[MAXTEMP];
             char *v = expandz(temp, sizeof(temp), x->attr[a].value);
-	    if(!va)warnx("Failed to expand: %s",x->attr[a].attribute);
-	    else if(!v)warnx("Failed to expand: %s",x->attr[a].value);
-	    else
+            if (!va)
+               warnx("Failed to expand: %s", x->attr[a].attribute);
+            else if (!v)
+               warnx("Failed to expand: %s", x->attr[a].value);
+            else
             {
              char *e = stringdecimal_eval(v, format: format, places: places, round:round);
                if (!debug && !comment && (!e || *e == '!') && !def)
@@ -2999,7 +3001,8 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             if (asc)
                warning(x, "QUERY and ASC in SQL");
             v = expand(temp, sizeof(temp), litquery);
-	    if(!v)warnx("Failed to expand: %s",litquery);
+            if (!v)
+               warnx("Failed to expand: %s", litquery);
             qadd(v);
          } else
          {                      // construct query
@@ -3055,7 +3058,8 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             free(v);
 #else
             v = expand(temp, sizeof(temp), q);
-	    if(!v)warnx("Failed to expand: %s",q);
+            if (!v)
+               warnx("Failed to expand: %s", q);
             qadd(v);
 #endif
             free(q);
