@@ -3000,12 +3000,12 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             query = strdup(v);
          } else
          {                      // construct query
-            if (key && key->value && where)
+            if (key && key->value && where && *where)
             {
                warning(x, "KEY and WHERE in SQL");
                return x->end->next;
             };
-            if (desc && !order)
+            if (desc && (!order || !*order))
             {
                warning(x, "DESC with no ORDER in SQL");
                return x->end->next;
@@ -3020,7 +3020,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             fprintf(o, "%s", select ? : "*");
             if (table)
                fprintf(o, " FROM %s", table);
-            if (where)
+            if (where && *where)
                fprintf(o, " WHERE %s", where);
             if (key && key->value)
             {
@@ -3028,11 +3028,11 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                v = getvar(v ? : key->value, 0);
                fprintf(o, " WHERE %s='%s'", key->value, v ? : "");
             }
-            if (group)
+            if (group && *group)
                fprintf(o, " GROUP BY %s", group);
-            if (having)
+            if (having && *having)
                fprintf(o, " HAVING %s", having);
-            if (order)
+            if (order && *order)
             {
                fprintf(o, " ORDER BY %s", order);
                if (desc)
@@ -3040,7 +3040,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                if (asc)
                   fprintf(o, " ASC");
             }
-            if (limit)
+            if (limit && *limit)
                fprintf(o, " LIMIT %s", limit);
             fclose(o);
 #if 0
