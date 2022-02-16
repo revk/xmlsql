@@ -425,7 +425,7 @@ char *expandd(char *buf, int len, const char *i, char sum)
          const char *e;
          dollar_expand_t *d = NULL;
          char *fail(const char *e) {
-            warnx("Expand failed: %s\n", e);
+            warnx("Expand failed: %s\n[%s]", e, i);
             dollar_expand_free(&d);
             return NULL;
          }
@@ -3052,7 +3052,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
 #if 0
             const char *e;
             v = sqlexpand(q, getvarexpand, &e, SQLEXPANDPPID | SQLEXPANDZERO | SQLEXPANDBLANK | SQLEXPANDUNSAFE);
-            if (e)
+            if (e || !v)
                fprintf(stderr, "%s:%d Expansion: %s\n[%s]\n[%s]", x->filename, x->line, e, q, v);
             qadd(v);
             free(v);
