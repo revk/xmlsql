@@ -550,6 +550,8 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       unsigned char list = dollar_expand_list(&d);
       if (literal)
       {                         // Output value (literal)
+         if (!(flags & SQLEXPANDUNSAFE))
+            return fail("$% not allowed");
          if (list)
             return fail("$% used with list prefix");
          while (*value)
