@@ -3025,7 +3025,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             fprintf(o, "SELECT ");
             if (distinct)
                fprintf(o, "DISTINCT ");
-            fprintf(o, "%s", select ? : "*");
+            fprintf(o, "%s", ex(select) ? : "*");
             if (ex(table))
                fprintf(o, " FROM %s", table);
             if (ex(where))
