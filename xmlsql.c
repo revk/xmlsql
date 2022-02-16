@@ -4156,14 +4156,16 @@ xmltoken *loadfile(char *fn)
       f = fileno(stdin);
       fntag = getenv("SCRIPT_NAME") ? : fntag;
    } else
+   {
       f = open(fn, O_RDONLY);
+      if (f < 0)
+         err(1, "Loading file [%s]", fn);
+   }
    {
       char *r = strrchr(fntag, '/');
       if (r)
          fntag = r + 1;
    }
-   if (f < 0)
-      err(1, "Loading file [%s]", fntag);
    {                            // size
       struct stat s;
       if (!fstat(f, &s))
