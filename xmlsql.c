@@ -421,6 +421,47 @@ char *expandd(char *buf, int len, char *i, char sum)
 #endif
           )
       {
+#if 0
+         dollar_expand_t d;
+         char *fail(const char *e) {
+            warnx("Expand failed: %s\n", e);
+            dollar_expand_free(&d);
+            return NULL;
+         }
+         if (*i == '$')
+            i++;
+         i = dollar_expand_parse(&d, i) if (!i)
+            if (!i)
+               return fail(dollar_expand_error(&d));
+         char *name = dollar_expand_name(&d);
+         if (!strcmp(name, "$"))
+         {
+            o += sprintf(o, "%d", getppid());
+            continue;
+         } else if (!strcmp(name, "@"))
+         {
+            i++;
+            struct stat s = { };
+            time_t when = 0;
+            if (!stat(".", &s))
+               when = s.st_mtime;
+            else
+               when = time(0);
+            o += sprintf(o, "%ld", when);
+         } else
+         {
+            char *value = getvar(name, 0);
+            if (value)
+            {
+               value = dollar_expand_process(&d, 0);
+               if (value)
+               {
+
+               }
+            }
+         }
+         dollar_expand_free(&d);
+#else
          char *n,
          *e,
          *v,
@@ -605,6 +646,7 @@ char *expandd(char *buf, int len, char *i, char sum)
             quote = *i;
          *o++ = *i++;
       }
+#endif
    }
    *o = 0;
    xmlutf8(buf);
@@ -2935,7 +2977,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             if (limit)
                fprintf(o, " LIMIT %s", limit);
             fclose(o);
-#if 1
+#if 0
             const char *e;
             v = sqlexpand(q, getvarexpand, &e, SQLEXPANDPPID | SQLEXPANDZERO | SQLEXPANDBLANK | SQLEXPANDUNSAFE);
             if (e)

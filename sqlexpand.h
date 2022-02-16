@@ -7,10 +7,10 @@
 typedef struct dollar_expand_s dollar_expand_t;
 
 // Initialises dollar_expand_t. Passed pointer to character after the $. Returns next character after parsing $ expansion args, NULL for error
-const char *dollar_expand_parse(dollar_expand_t*,const char *script,unsigned int flags);
+const char *dollar_expand_parse(dollar_expand_t*,const char *script);
 
 // Passed the parsed dollar_expand_t, and a pointer to the value, returns processed value, e.g. after applying flags and suffixes, and so on
-char *dollar_expand_process(dollar_expand_t*,const char *value);
+char *dollar_expand_process(dollar_expand_t*,const char *value,unsigned int flags);
 
 // Frees space created (including any used for return from dollar_expand_process)
 void dollar_expand_free(dollar_expand_t*);

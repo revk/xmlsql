@@ -64,10 +64,9 @@ unsigned char dollar_expand_query(dollar_expand_t * d)
 }
 
 // Initialises dollar_expand_t. Passed pointer to character after the $. Returns next character after parsing $ expansion args
-const char *dollar_expand_parse(dollar_expand_t * d, const char *p, unsigned int flags)
+const char *dollar_expand_parse(dollar_expand_t * d, const char *p)
 {
    memset(d, 0, sizeof(*d));
-   d->flags = flags;
    char *fail(const char *e) {
       d->error = e;
       return NULL;
@@ -144,7 +143,7 @@ const char *dollar_expand_parse(dollar_expand_t * d, const char *p, unsigned int
 }
 
 // Passed the parsed dollar_expand_t, and a pointer to the value, returns processed value, e.g. after applying flags and suffixes, and so on
-char *dollar_expand_process(dollar_expand_t * d, const char *value)
+char *dollar_expand_process(dollar_expand_t * d, const char *value, unsigned int flags)
 {
    if (!d)
       return NULL;
@@ -157,7 +156,7 @@ char *dollar_expand_process(dollar_expand_t * d, const char *value)
 
    if (d->file && value)
    {                            // File fetch
-      if (!(d->flags & SQLEXPANDFILE))
+      if (!(flags & SQLEXPANDFILE))
          return fail("$@ not allowed");
       if (strstr(value, "/etc/"))
          return fail("Not playing that game, file is has /etc/");
@@ -476,7 +475,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          continue;
       }
       p++;
-      p = dollar_expand_parse(&d, p, flags);
+      p = dollar_expand_parse(&d, p);
       if (!p)
          return fail(dollar_expand_error(&d));
 
@@ -532,7 +531,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
 
       if (value)
       {
-         value = dollar_expand_process(&d, value);
+         value = dollar_expand_process(&d, value, flags);
          if (!value)
             fail(dollar_expand_error(&d));
       }
