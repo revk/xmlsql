@@ -710,7 +710,9 @@ char *expandd(char *buf, int len, const char *i, char sum)
 
 char *expand(char *buf, int len, char *i)
 {
-   return expandd(buf, len, i, 0);
+   char *ret= expandd(buf, len, i, 0);
+   if(!ret)warnx("Failed: %s",i);
+   return ret;
 }
 
 char *expandz(char *buf, int len, char *i)
