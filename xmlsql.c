@@ -456,7 +456,7 @@ char *expandd(char *buf, int len, char *i, char sum)
                value = dollar_expand_process(&d, 0);
                if (value)
                {
-                  // TODO
+                  // TODO - generate output with appropriate flags used for escaping if needed
                }
             }
          }

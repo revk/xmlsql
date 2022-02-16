@@ -63,6 +63,11 @@ unsigned char dollar_expand_query(dollar_expand_t * d)
    return d->query;
 }
 
+unsigned char dollar_expand_underscore(dollar_expand_t * d)
+{                               // Flags
+   return d->underscore;
+}
+
 // Initialises dollar_expand_t. Passed pointer to character after the $. Returns next character after parsing $ expansion args
 const char *dollar_expand_parse(dollar_expand_t * d, const char *p)
 {
