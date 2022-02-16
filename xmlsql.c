@@ -1064,6 +1064,8 @@ void writeoutput(xmltoken * x, char *v, char *e, int hasreplace, int flags, int 
             {
                char temptag[1000];
                char *t = expand(temptag, sizeof(temptag), x->attr[a].attribute);
+	       if(t)
+	       {
                int l = strlen(t);
                if (l && e - v >= l && !strncmp(v, t, l))
                {
@@ -1078,6 +1080,7 @@ void writeoutput(xmltoken * x, char *v, char *e, int hasreplace, int flags, int 
                   v += l;
                   break;
                }
+	       }
             }
          }
          if (a < x->attrs)
