@@ -717,7 +717,9 @@ char *expand(char *buf, int len, char *i)
 
 char *expandz(char *buf, int len, char *i)
 {
-   return expandd(buf, len, i, 1);
+   char *ret= expandd(buf, len, i, 1);
+       if(!ret)warnx("Failed: %s",i);
+     return ret;
 }
 
 static void xputc(unsigned char c, FILE * f, int flags)
