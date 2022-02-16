@@ -3077,11 +3077,14 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                   if ((*p == '-' && p[1] == '-' && (!p[2] || isspace(p[2]))) || *p == '#' || (*p == '/' && p[1] == '*'))
                      errx(1, "%s:%d Comment in SQL query: %s", x->filename, x->line, query);
                   if (*p == ';')
-		  {
-			  if(!p[1])*p=0;
-			  else
-                     errx(1, "%s:%d Multiple query attempt in SQL query: %s", x->filename, x->line, query);
-		  }
+                  {
+                     if (!p[1])
+                     {
+                        *p = 0;
+                        warnx("%s:%d Trailing ; on sql query, ignored.", x->filename, x->line, query);
+                     } else
+                        errx(1, "%s:%d Multiple query attempt in SQL query: %s", x->filename, x->line, query);
+                  }
                }
             }
             if (q)
