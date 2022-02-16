@@ -33,7 +33,7 @@ struct dollar_expand_s {
    unsigned int flags;
    int index;                   // [n] index
    const char *error;           // Error
-   char *name;            // Variable name (malloced copy)
+   char *name;                  // Variable name (malloced copy)
    const char *suffix;          // Set if :x suffixes - points to first :
    char *malloced;              // Set if any malloced space has been used
 };
@@ -46,6 +46,21 @@ const char *dollar_expand_name(dollar_expand_t * d)
 const char *dollar_expand_error(dollar_expand_t * d)
 {                               // The current error
    return d->error;
+}
+
+unsigned char dollar_expand_literal(dollar_expand_t * d)
+{                               // Flags
+   return d->literal;
+}
+
+unsigned char dollar_expand_quote(dollar_expand_t * d)
+{                               // Flags
+   return d->quote;
+}
+
+unsigned char dollar_expand_list(dollar_expand_t * d)
+{                               // Flags
+   return d->list;
 }
 
 // Initialises dollar_expand_t. Passed pointer to character after the $. Returns next character after parsing $ expansion args
@@ -127,7 +142,7 @@ const char *dollar_expand_parse(dollar_expand_t * d, const char *p, unsigned int
 }
 
 // Passed the parsed dollar_expand_t, and a pointer to the value, returns processed value, e.g. after applying flags and suffixes, and so on
-const char *dollar_expand_process(dollar_expand_t * d, const char *value)
+char *dollar_expand_process(dollar_expand_t * d, const char *value)
 {
    if (!d)
       return NULL;
@@ -306,7 +321,7 @@ const char *dollar_expand_process(dollar_expand_t * d, const char *value)
       d->malloced = new;
    }
 
-   void dobinary(const void *buf, int len) {  // Do a base64 or hex
+   void dobinary(const void *buf, int len) {    // Do a base64 or hex
       char *new;
       size_t l;
       FILE *o = open_memstream(&new, &l);
@@ -375,7 +390,7 @@ const char *dollar_expand_process(dollar_expand_t * d, const char *value)
          return fail("Unknown hash to use");
    } else if (d->base64)
       dobinary(value, strlen(value));   // Base64
-   return value;
+   return (char *) value;
 }
 
 // Frees space created (including any used for return from dollar_expand_process)
@@ -395,6 +410,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       getvar = getenv;          // Default
    if (!query)
       return NULL;              // Uh?
+   dollar_expand_t d;
    const char *warn = NULL;
    char *expanded = NULL;
    char *malloced = NULL;       // For when variable is malloced
@@ -406,6 +422,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       free(malloced);
       if (errp)
          *errp = e;
+      dollar_expand_free(&d);
       return NULL;
    }
    char q = 0;
@@ -457,83 +474,11 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          continue;
       }
       p++;
+      p = dollar_expand_parse(&d, p, flags);
+      if (!p)
+         return fail(dollar_expand_error(&d));
 
-
-
-      malloced = NULL;
-      // $ expansion
-      char curly = 0;
-      if (*p == '{')
-         curly = *p++;
-      char quote = 0,
-          list = 0,
-          file = 0,
-          literal = 0,
-          url = 0,
-          hash = 0,
-          base64 = 0,
-          underscore = 0;
-      while (*p)
-      {
-         if (*p == '#')
-            hash++;
-         else if (*p == ',')
-            list++;
-         else if (*p == '*')
-            file++;
-         else if (*p == '%')
-            literal++;
-         else if (*p == '+')
-            url++;
-         else if (*p == '-')
-            underscore++;
-         else if (*p == '=')
-            base64++;
-         else
-            break;
-         p++;
-      }
-      // Variable
-      const char *s = p,
-          *e = p;               // The variable name
-      if (strchr("$/\\@<", *e))
-         e++;                   // Special one letter variable name
-      else if (curly)
-         while (*e && *e != '}' && *e != ':')
-            e++;                // In {...}
-      else if (isalpha(*e) || *e == '_')        // Simple
-         while (isalnum(*e) || *e == '_')
-            e++;
-      p = e;
-      // Index
-      int index = 0;
-      if (*p == '[')
-      {
-         p++;
-         if (!isdigit(*p))
-            return fail("Bad [n] suffix");
-         while (isdigit(*p))
-            index = index * 10 + *p++ - '0';
-         if (!index)
-            return fail("[0] not valid");
-         if (*p != ']')
-            return fail("Unclosed [...");
-         p++;
-      }
-      // Suffix
-      const char *suffix = p;
-      while (*p == ':' && isalpha(p[1]))
-         p += 2;
-      // End
-      if (curly && *p++ != '}')
-         return fail("Unclosed ${...");
-
-      if (s == e)
-         return fail("$ without no variable name");
-
-      char *name = strndup(s, (int) (e - s));
-
-      // Get value
+      const char *name = dollar_expand_name(&d);
       char *value = NULL;
       if (!name[1] && *name == '$')
       {
@@ -583,234 +528,12 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       } else
          value = getvar(name);
 
-      if (file && value)
-      {                         // File fetch
-         if (!(flags & SQLEXPANDFILE))
-            return fail("$@ not allowed");
-         if (strstr(value, "/etc/"))
-            return fail("Not playing that game, file is has /etc/");
-         int i = open(value, O_RDONLY);
-         if (i >= 0)
-         {
-            size_t len,
-             got;
-            FILE *o = open_memstream(&malloced, &len);
-            char buf[16384];
-            while ((got = read(i, buf, sizeof(buf))) > 0)
-               fwrite(buf, got, 1, o);
-            fclose(o);
-            close(i);
-            value = malloced;
-         }
-      }
-
-      if (index && value)
+      if (value)
       {
-         char *p = value,
-             *s = NULL;;
-         while (p && --index)
-         {
-            s = strchr(p, '\t');
-            if (s)
-               p = s + 1;
-            else
-               p = NULL;
-         }
-         if (index || !p)
-            value = "";
-         else
-         {
-            s = strchr(p, '\t');
-            if (s)
-               value = strndup(p, (int) (s - p));
-            else
-               value = strdup(p);
-            free(malloced);
-            malloced = value;
-         }
+         value = dollar_expand_process(&d, value);
+         if (!value)
+            fail(dollar_expand_error(&d));
       }
-
-      while (value && *suffix == ':' && isalpha(suffix[1]))
-      {
-         switch (suffix[1])
-         {
-         case 'h':             // head in path - remove all after last /
-            {
-               char *s = strrchr(value, '/');
-               if (s)
-               {
-                  if (value == malloced)
-                     *s = 0;
-                  else
-                  {
-                     value = strndup(value, (int) (s - value));
-                     free(malloced);
-                     malloced = value;
-                  }
-               }
-            }
-            break;
-         case 't':             // tail in path - everything from past last slash, or if no slash then unchanged
-            {
-               char *s = strrchr(value, '/');
-               if (s)
-               {
-                  if (!malloced)
-                     value = s + 1;
-                  else
-                  {
-                     value = strdup(s + 1);
-                     free(malloced);
-                     malloced = value;
-                  }
-               }
-            }
-            break;
-         case 'e':             // extension on file
-            {
-               char *s = strrchr(value, '/') ? : value;
-               s = strrchr(s, '.');
-               if (s)
-               {
-                  if (!malloced)
-                     value = s + 1;
-                  else
-                  {
-                     value = strdup(s + 1);
-                     free(malloced);
-                     malloced = value;
-                  }
-               } else
-                  value = "";
-            }
-            break;
-         case 'r':             // remove extension on file
-            {
-               char *s = strrchr(value, '/') ? : value;
-               s = strrchr(s, '.');
-               if (s)
-               {
-                  if (value == malloced)
-                     *s = 0;
-                  else
-                  {
-                     value = strndup(value, (int) (s - value));
-                     free(malloced);
-                     malloced = value;
-                  }
-               }
-            }
-            break;
-         default:
-            return fail("Unknown $...: suffix");
-         }
-         suffix += 2;
-      }
-
-      if (underscore)
-      {
-         if (!malloced)
-            value = malloced = strdup(value);
-         for (char *p = value; *p; p++)
-            if (*p == '\'' || *p == '"' || *p == '`')
-               *p = '_';
-      }
-
-      if (url)
-      {                         // URL encode
-         char *new;
-         size_t l;
-         FILE *o = open_memstream(&new, &l);
-         char *v = value;
-         while (*v)
-         {
-            if (*v == ' ' && url == 1)
-               fputc('+', o);
-            else if (*v <= ' ' || strchr("+=%\"'&<>?#!", *v) || (url > 1 && *v == '/'))
-            {
-               fputc('%', o);
-               int u = url;
-               while (u-- > 1)
-                  fprintf(o, "25");
-               fprintf(o, "%02X", *v);
-            } else
-               fputc(*v, o);
-            v++;
-         }
-         fclose(o);
-         free(malloced);
-         malloced = value = new;
-      }
-
-      void dobinary(void *buf, int len) {       // Do a base64 or hex
-         char *new;
-         size_t l;
-         FILE *o = open_memstream(&new, &l);
-         unsigned char *p = buf,
-             *e = p + len;
-         if (base64)
-         {
-            const char BASE64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-            unsigned int b = 0,
-                v = 0;
-            while (p < e)
-            {
-               b += 8;
-               v = (v << 8) + *p++;
-               while (b >= 6)
-               {
-                  b -= 6;
-                  fputc(BASE64[(v >> b) & ((1 << 6) - 1)], o);
-               }
-            }
-            if (b)
-            {                   // final bits
-               b += 8;
-               v <<= 8;
-               b -= 6;
-               fputc(BASE64[(v >> b) & ((1 << 6) - 1)], o);
-               while (b)
-               {                // padding
-                  while (b >= 6)
-                  {
-                     b -= 6;
-                     fputc('=', o);
-                  }
-                  if (b)
-                     b += 8;
-               }
-            }
-         } else
-            while (p < e)
-               fprintf(o, "%02x", *p++);
-         fclose(o);
-         free(malloced);
-         malloced = value = new;
-      }
-
-      if (hash)
-      {                         // Make a hash (hex or base64)
-         if (hash == 1)
-         {                      // MD5
-            unsigned char md5buf[16];
-            MD5_CTX c;
-            MD5_Init(&c);
-            MD5_Update(&c, value, strlen(value));
-            MD5_Final(md5buf, &c);
-            dobinary(md5buf, sizeof(md5buf));
-         } else if (hash == 2)
-         {
-            unsigned char sha1buf[20];
-            SHA_CTX c;
-            SHA1_Init(&c);
-            SHA1_Update(&c, value, strlen(value));
-            SHA1_Final(sha1buf, &c);
-            dobinary(sha1buf, sizeof(sha1buf));
-
-         } else
-            return fail("Unknown hash to use");
-      } else if (base64)
-         dobinary(value, strlen(value));        // Base64
 
       if (!value && !q && (flags & SQLEXPANDZERO))
          value = "0";
@@ -821,6 +544,10 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          warn = "Missing variable";
          value = "";
       }
+
+      unsigned char literal = dollar_expand_literal(&d);
+      unsigned char quote = dollar_expand_quote(&d);
+      unsigned char list = dollar_expand_list(&d);
       if (literal)
       {                         // Output value (literal)
          if (quote)
@@ -926,8 +653,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             q = 0;
          }
       }
-      free(name);
-      free(malloced);
+      dollar_expand_free(&d);
    }
    if (q)
       return fail("Mismatched quotes");
