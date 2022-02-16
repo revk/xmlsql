@@ -4159,7 +4159,10 @@ xmltoken *loadfile(char *fn)
    {
       f = open(fn, O_RDONLY);
       if (f < 0)
-         err(1, "Loading file [%s]", fn);
+      {
+         warn("Loading file [%s]", fn);
+         return NULL;
+      }
    }
    {
       char *r = strrchr(fntag, '/');
@@ -4323,7 +4326,7 @@ int main(int argc, const char *argv[])
       xmltoken *n = loadfile(fn);
       if (!x)
          x = n;
-      else
+      else if (n)
       {                         // append
          xmltoken *e = x;
          while (e->next)
