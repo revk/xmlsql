@@ -415,13 +415,13 @@ char *expandd(char *buf, int len, const char *i, char sum)
    {
       if (*i == '?')
          query++;
-      if (*i == '$'
+      if ((*i == '$' && i[1] != '(')    // Note $( is jquery crap so we ignore
 #ifndef  BODGEEVAL
           || (sum && isalpha(*i) && (i == base || !isalnum(i[-1])))
 #endif
           )
       {
-#if 0
+#if 1
          const char *e;
          dollar_expand_t *d = NULL;
          char *fail(const char *e) {
