@@ -2819,9 +2819,14 @@ xmltoken *doset(xmltoken * x, process_t * state)
          {
             char temp[MAXTEMP];
             char *v = expand(temp, sizeof(temp), x->attr[a].value);
-            setenv(va, v, 1);
-            if (comment || debug)
-               info(x, "%s=%s", va, v);
+            if (!v)
+               warnx("Failed to expand: %s", x->attr[a].value);
+            else
+            {
+               setenv(va, v, 1);
+               if (comment || debug)
+                  info(x, "%s=%s", va, v);
+            }
          } else
          {
             unsetenv(va);
