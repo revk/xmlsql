@@ -500,6 +500,8 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       if (e)
          warn = e;
 
+      unsigned char literal = dollar_expand_literal(d);
+      unsigned char list = dollar_expand_list(d);
       const char *name = dollar_expand_name(d);
       char *value = NULL;
       if (!name[1] && *name == '$')
@@ -539,6 +541,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             q = '\'';
          fputc('\'', f);
          value = "";
+         literal = 1;
       } else if (!name[1] && *name == '\\')
       {                         // Literal `
          if (q == '`')
@@ -547,6 +550,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             q = '`';
          fputc('`', f);
          value = "";
+         literal = 1;
       } else
          value = getvar(name);
 
@@ -569,8 +573,6 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          value = "";
       }
 
-      unsigned char literal = dollar_expand_literal(d);
-      unsigned char list = dollar_expand_list(d);
       if (literal)
       {                         // Output value (literal)
          if (!(flags & SQLEXPANDUNSAFE))
