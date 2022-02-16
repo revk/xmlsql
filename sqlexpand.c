@@ -29,7 +29,8 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       *errp = NULL;
    if (!getvar)
       getvar = getenv;          // Default
-   if(!query)return NULL; // Uh?
+   if (!query)
+      return NULL;              // Uh?
    const char *warn = NULL;
    char *expanded = NULL;
    char *malloced = NULL;       // For when variable is malloced
@@ -86,14 +87,14 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          if (*p == ';')
             return fail("Multiple commands in one SQL");
       }
-      if (*p != '$'&&(!(flags&SQLEXPANDNODOLLAR)||!isalpha(*p)||(p>query&&isalpha(p[-1]))))
+      if (*p != '$')
       {                         // OK
          fputc(*p++, f);
          continue;
       }
       malloced = NULL;
       // $ expansion
-      if(*p=='$')p++;
+      p++;
       char curly = 0;
       if (*p == '{')
          curly = *p++;
@@ -104,8 +105,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
           url = 0,
           hash = 0,
           base64 = 0,
-          underscore = 0,
-	  conditional=0;
+          underscore = 0;
       while (*p)
       {
          if (*p == '#')
@@ -122,8 +122,6 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             underscore++;
          else if (*p == '=')
             base64++;
-         else if (*p == '?')
-            conditional++;
          else
             break;
          p++;
@@ -172,11 +170,11 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       char *value = NULL;
       if (!name[1] && *name == '$')
       {
-            if (!(flags & SQLEXPANDPPID))
-               return fail("$$ not allowed");
-            if (asprintf(&malloced, "%d", getppid()) < 0)
-               err(1, "malloc");
-            value = malloced;
+         if (!(flags & SQLEXPANDPPID))
+            return fail("$$ not allowed");
+         if (asprintf(&malloced, "%d", getppid()) < 0)
+            err(1, "malloc");
+         value = malloced;
       } else if (!name[1] && *name == '@')
       {                         // Cache feature id
          struct stat s = { };
@@ -453,7 +451,6 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          value = "";
       if (!value)
       {
-	      if(conditional&&(flags&SQLEXPANDCONDITIONAL))return fail(NULL); // $? failed
          warn = "Missing variable";
          value = "";
       }
@@ -620,8 +617,6 @@ int main(int argc, const char *argv[])
    int dosafe = 0;
    int dozero = 0;
    int doblank = 0;
-   int doconditional=0;
-   int donodollar=0;
    const char *query = NULL;
    {                            // POPT
       poptContext optCon;       // context for parsing command-line options
@@ -631,8 +626,6 @@ int main(int argc, const char *argv[])
          { "safe", 0, POPT_ARG_NONE, &dosafe, 0, "Do not allow ($%)" },
          { "zero", 0, POPT_ARG_NONE, &dozero, 0, "Do 0 for missing unquoted expansion" },
          { "blank", 0, POPT_ARG_NONE, &doblank, 0, "Allow blank for missing expansion" },
-         { "conditional", 0, POPT_ARG_NONE, &doconditional, 0, "Allow $? for conditional" },
-         { "no-dollar", 0, POPT_ARG_NONE, &donodollar, 0, "Not for SQL, expand without $ needed" },
          POPT_AUTOHELP { }
       };
 
@@ -666,10 +659,6 @@ int main(int argc, const char *argv[])
       flags |= SQLEXPANDZERO;
    if (doblank)
       flags |= SQLEXPANDBLANK;
-   if (doconditional)
-      flags |= SQLEXPANDCONDITIONAL;
-   if (donodollar)
-      flags |= SQLEXPANDNODOLLAR;
    if (!dosafe)
       flags |= SQLEXPANDUNSAFE;
    const char *e = NULL;

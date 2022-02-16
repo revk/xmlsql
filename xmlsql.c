@@ -613,48 +613,12 @@ char *expandd(char *buf, int len, char *i, char sum)
 
 char *expand(char *buf, int len, char *i)
 {
-#if 1
    return expandd(buf, len, i, 0);
-#else
-   const char *e;
-   char *v = sqlexpand(i, getvarexpand, &e, SQLEXPANDCONDITIONAL | SQLEXPANDPPID | SQLEXPANDZERO | SQLEXPANDBLANK);
-   if (v && strlen(v) + 1 > len)
-   {
-      free(v);
-      v = NULL;
-      if (!e)
-         e = "Too long";
-   }
-   if (e)
-      warnx("Expansion: %s\n[%s]\n[%s]", e, i, v);
-   if (!v)
-      return NULL;
-   strcpy(buf, v);
-   return buf;
-#endif
 }
 
 char *expandz(char *buf, int len, char *i)
 {
-#if 1
    return expandd(buf, len, i, 1);
-#else
-   const char *e;
-   char *v = sqlexpand(i, getvarexpand, &e, SQLEXPANDCONDITIONAL | SQLEXPANDPPID | SQLEXPANDZERO | SQLEXPANDBLANK | SQLEXPANDNODOLLAR);
-   if (v && strlen(v) + 1 > len)
-   {
-      free(v);
-      v = NULL;
-      if (!e)
-         e = "Too long";
-   }
-   if (e)
-      warnx("Expansion: %s\n[%s]\n[%s]", e, i, v);
-   if (!v)
-      return NULL;
-   strcpy(buf, v);
-   return buf;
-#endif
 }
 
 static void xputc(unsigned char c, FILE * f, int flags)
