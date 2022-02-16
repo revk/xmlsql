@@ -29,6 +29,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       *errp = NULL;
    if (!getvar)
       getvar = getenv;          // Default
+   if(!query)return NULL; // Uh?
    const char *warn = NULL;
    char *expanded = NULL;
    char *malloced = NULL;       // For when variable is malloced
@@ -85,14 +86,14 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          if (*p == ';')
             return fail("Multiple commands in one SQL");
       }
-      if (*p != '$')
+      if (*p != '$'&&(!(flags&SQLEXPANDNODOLLAR)||!isalpha(*p)||(p>query&&isalpha(p[-1]))))
       {                         // OK
          fputc(*p++, f);
          continue;
       }
       malloced = NULL;
       // $ expansion
-      p++;
+      if(*p=='$')p++;
       char curly = 0;
       if (*p == '{')
          curly = *p++;
@@ -620,6 +621,7 @@ int main(int argc, const char *argv[])
    int dozero = 0;
    int doblank = 0;
    int doconditional=0;
+   int donodollar=0;
    const char *query = NULL;
    {                            // POPT
       poptContext optCon;       // context for parsing command-line options
@@ -630,6 +632,7 @@ int main(int argc, const char *argv[])
          { "zero", 0, POPT_ARG_NONE, &dozero, 0, "Do 0 for missing unquoted expansion" },
          { "blank", 0, POPT_ARG_NONE, &doblank, 0, "Allow blank for missing expansion" },
          { "conditional", 0, POPT_ARG_NONE, &doconditional, 0, "Allow $? for conditional" },
+         { "no-dollar", 0, POPT_ARG_NONE, &donodollar, 0, "Not for SQL, expand without $ needed" },
          POPT_AUTOHELP { }
       };
 
@@ -665,6 +668,8 @@ int main(int argc, const char *argv[])
       flags |= SQLEXPANDBLANK;
    if (doconditional)
       flags |= SQLEXPANDCONDITIONAL;
+   if (donodollar)
+      flags |= SQLEXPANDNODOLLAR;
    if (!dosafe)
       flags |= SQLEXPANDUNSAFE;
    const char *e = NULL;

@@ -22,6 +22,7 @@
 #include <sqllib.h>
 #include "xmlparse.h"
 #include "punycode.h"
+#include "sqlexpand.h"
 #include <stringdecimaleval.h>
 
 const char BASE64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -332,7 +333,7 @@ int fieldlen(MYSQL_FIELD * f)
    return f->length;
 }
 
-char *getvar(char *n, int *lenp)
+char *getvar(const char *n, int *lenp)
 {                               // Return a variable content
    int l = level;
    if (lenp)
@@ -340,7 +341,7 @@ char *getvar(char *n, int *lenp)
    if (!n)
       return 0;
    if (*n == '$')
-      n = getvar(n + 1, NULL); // Nested get, e.g. ${$X}
+      n = getvar(n + 1, NULL);  // Nested get, e.g. ${$X}
    // check SQL
    while (l)
    {
@@ -370,6 +371,12 @@ char *getvar(char *n, int *lenp)
    // last resort, environment
    return getenv(n);
 }
+
+char *getvarexpand(const char *n)
+{
+   return getvar(n, NULL);
+}
+
 
 char *expandd(char *buf, int len, char *i, char sum)
 {                               // expand a string (sum set if allow variables without $ and default variables to zero, for maths in eval, etc)
@@ -425,9 +432,9 @@ char *expandd(char *buf, int len, char *i, char sum)
          if (*i == '$')
          {
             i++;
-            if (*i == '$') 
-            { // Parent PID
-		    o+=sprintf(o,"%d",getppid());
+            if (*i == '$')
+            {                   // Parent PID
+               o += sprintf(o, "%d", getppid());
                continue;
             }
             if (*i == '@')
@@ -606,12 +613,48 @@ char *expandd(char *buf, int len, char *i, char sum)
 
 char *expand(char *buf, int len, char *i)
 {
+#if 0
    return expandd(buf, len, i, 0);
+#else
+   const char *e;
+   char *v = sqlexpand(i, getvarexpand, &e, SQLEXPANDCONDITIONAL | SQLEXPANDPPID | SQLEXPANDZERO | SQLEXPANDBLANK);
+   if (v && strlen(v) + 1 > len)
+   {
+      free(v);
+      v = NULL;
+      if (!e)
+         e = "Too long";
+   }
+   if (e)
+      warnx("Expansion: %s\n[%s]\n[%s]", e, i, v);
+   if (!v)
+      return NULL;
+   strcpy(buf, v);
+   return buf;
+#endif
 }
 
 char *expandz(char *buf, int len, char *i)
 {
+#if 0
    return expandd(buf, len, i, 1);
+#else
+   const char *e;
+   char *v = sqlexpand(i, getvarexpand, &e, SQLEXPANDCONDITIONAL | SQLEXPANDPPID | SQLEXPANDZERO | SQLEXPANDBLANK | SQLEXPANDNODOLLAR);
+   if (v && strlen(v) + 1 > len)
+   {
+      free(v);
+      v = NULL;
+      if (!e)
+         e = "Too long";
+   }
+   if (e)
+      warnx("Expansion: %s\n[%s]\n[%s]", e, i, v);
+   if (!v)
+      return NULL;
+   strcpy(buf, v);
+   return buf;
+#endif
 }
 
 static void xputc(unsigned char c, FILE * f, int flags)
