@@ -3010,10 +3010,10 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                fprintf(o, " LIMIT %s", limit);
             fclose(o);
 #if 1
-	    const char *e;
-	    v=sqlexpand(q,getvarexpand,&e,SQLEXPANDPPID|SQLEXPANDZERO|SQLEXPANDBLANK);
+            const char *e;
+            v = sqlexpand(q, getvarexpand, &e, SQLEXPANDPPID | SQLEXPANDZERO | SQLEXPANDBLANK | SQLEXPANDUNSAFE);
             qadd(v);
-	    free(v);
+            free(v);
 #else
             v = expand(temp, sizeof(temp), q);
             qadd(v);
