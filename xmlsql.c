@@ -456,7 +456,7 @@ char *expandd(char *buf, int len, char *i, char sum)
                value = dollar_expand_process(&d, 0);
                if (value)
                {
-
+                  // TODO
                }
             }
          }
@@ -469,7 +469,8 @@ char *expandd(char *buf, int len, char *i, char sum)
              hash = 0,
              query = 0,
              safe = 0,
-             comma = 0;
+             comma = 0,
+             raw = 0;
          if (*i == '$')
          {
             i++;
@@ -490,7 +491,7 @@ char *expandd(char *buf, int len, char *i, char sum)
                o += sprintf(o, "%ld", when);
                continue;
             }
-            while (*i == '+' || *i == '#' || *i == '?' || *i == '-' || *i == ',')
+            while (1)
             {                   // prefixes for special processing
                if (*i == '+')
                   url++;
@@ -502,6 +503,10 @@ char *expandd(char *buf, int len, char *i, char sum)
                   safe++;
                else if (*i == ',')
                   comma++;
+               else if (*i == '%')
+                  raw++;
+               else
+                  break;
                i++;
             }
          }
