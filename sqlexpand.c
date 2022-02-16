@@ -110,8 +110,8 @@ dollar_expand_t *dollar_expand_parse(const char **sourcep, const char **errp)
    {                            // Variable name
       const char *s = p,
           *e = p;               // The variable name
-      if (strchr("/\\@<", *e) || (!curly && *e == '$'))
-         e++;                   // Special one letter variable names - $$ is a pain and needs dropping
+      if (strchr("$/\\@<", *e) && (!curly || p[1] == '}'))
+         e++;                   // Special one character variable names (if {x} then has to actually only be one character)
       else if (curly)
          while (*e && *e != '}' && *e != ':')
             e++;                // In {...}
