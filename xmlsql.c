@@ -437,10 +437,9 @@ char *expandd(char *buf, int len, const char *i, char sum)
          if (e)
             warnx("Expand: %s\n[%s]", e, i);
          const char *name = dollar_expand_name(d);
-	 if(!name)
-		 warnx("Unexpected no name: %s",i);
-	 else
-         if (!strcmp(name, "$"))
+         if (!name)
+            warnx("Unexpected no name: %s", i);
+         else if (!strcmp(name, "$"))
          {
             o += sprintf(o, "%d", getppid());
             continue;
@@ -484,8 +483,7 @@ char *expandd(char *buf, int len, const char *i, char sum)
                         o++;
                         v++;
                      }
-                  } else
-                  if (quote || comma)
+                  } else if (quote || comma)
                   {
                      if (comma && !quote && o < x)
                         *o++ = '"';     // List expansion
@@ -506,8 +504,8 @@ char *expandd(char *buf, int len, const char *i, char sum)
                      if (comma && !quote && o < x)
                         *o++ = '"';     // List expansion
                   } else
-                  while (*v && o < x)
-                     *o++ = *v++;       // simple expansion
+                     while (*v && o < x)
+                        *o++ = *v++;    // simple expansion
 
                }
             }
@@ -1064,23 +1062,23 @@ void writeoutput(xmltoken * x, char *v, char *e, int hasreplace, int flags, int 
             {
                char temptag[1000];
                char *t = expand(temptag, sizeof(temptag), x->attr[a].attribute);
-	       if(t)
-	       {
-               int l = strlen(t);
-               if (l && e - v >= l && !strncmp(v, t, l))
+               if (t)
                {
-                  char tempval[1000];
-                  char *e = expand(tempval, sizeof(tempval), x->attr[a].value);
-                  if (e)
+                  int l = strlen(t);
+                  if (l && e - v >= l && !strncmp(v, t, l))
                   {
-                     (*count) += strlen(e);
-                     if (!maxsize || (*count) <= maxsize)
-                        fprintf(of, "%s", e);
+                     char tempval[1000];
+                     char *e = expand(tempval, sizeof(tempval), x->attr[a].value);
+                     if (e)
+                     {
+                        (*count) += strlen(e);
+                        if (!maxsize || (*count) <= maxsize)
+                           fprintf(of, "%s", e);
+                     }
+                     v += l;
+                     break;
                   }
-                  v += l;
-                  break;
                }
-	       }
             }
          }
          if (a < x->attrs)
@@ -2874,32 +2872,35 @@ xmltoken *doeval(xmltoken * x, process_t * state)
             char *va = expand(tempa, sizeof(tempa), x->attr[a].attribute);
             char temp[MAXTEMP];
             char *v = expandz(temp, sizeof(temp), x->attr[a].value);
-          char *e = stringdecimal_eval(v, format: format, places: places, round:round);
-            if (!debug && !comment && (!e || *e == '!') && !def)
-               fprintf(stderr, "%s:%d Eval %s = %s = %s = %s format=%c round=%c places=%d\n", x->filename, x->line, va, x->attr[a].value, v, e, format ? : '?', round ? : '?', places);
-            if (!e || *e == '!')
+            if (v)
             {
-               if (e)
-                  free(e);
-               e = NULL;
-               if (def)
-                  e = strdup(def);
+             char *e = stringdecimal_eval(v, format: format, places: places, round:round);
+               if (!debug && !comment && (!e || *e == '!') && !def)
+                  fprintf(stderr, "%s:%d Eval %s = %s = %s = %s format=%c round=%c places=%d\n", x->filename, x->line, va, x->attr[a].value, v, e, format ? : '?', round ? : '?', places);
+               if (!e || *e == '!')
+               {
+                  if (e)
+                     free(e);
+                  e = NULL;
+                  if (def)
+                     e = strdup(def);
 #ifdef	BODGEEVAL
-               else
-                  e = strdup(v);        // Bodge to use unchanged value
+                  else
+                     e = strdup(v);     // Bodge to use unchanged value
 #endif
-            }
-            if (e)
-            {
-               if (comment || debug)
-                  info(x, "Eval %s = %s = %s = %s format=%c round=%c places=%d\n", va, x->attr[a].value, v, e, format ? : '?', round ? : '?', places);
-               setenv(va, e, 1);
-               free(e);
-            } else
-            {
-               if (comment || debug)
-                  info(x, "Unset %s", va);
-               unsetenv(va);
+               }
+               if (e)
+               {
+                  if (comment || debug)
+                     info(x, "Eval %s = %s = %s = %s format=%c round=%c places=%d\n", va, x->attr[a].value, v, e, format ? : '?', round ? : '?', places);
+                  setenv(va, e, 1);
+                  free(e);
+               } else
+               {
+                  if (comment || debug)
+                     info(x, "Unset %s", va);
+                  unsetenv(va);
+               }
             }
          } else
          {
