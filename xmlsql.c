@@ -4163,7 +4163,7 @@ xmltoken *loadfile(char *fn)
          fntag = r + 1;
    }
    if (f < 0)
-      err(1, "%s", fntag);
+      err(1, "Loading file [%s]", fntag);
    {                            // size
       struct stat s;
       if (!fstat(f, &s))
@@ -4189,7 +4189,7 @@ xmltoken *loadfile(char *fn)
       }
       l = read(f, buf + pos, all - pos - 1);
       if (l < 0)
-         err(1, "%s", fntag);
+         err(1, "Reading file [%s]", fntag);
       if (l == 0)
          break;
       pos += l;
@@ -4267,7 +4267,7 @@ int main(int argc, const char *argv[])
       struct dirent *e;
       DIR *d = opendir(smileydir);
       if (!d)
-         err(1, "%s", smileydir);
+         err(1, "Smiley dir [%s]", smileydir);
       while ((e = readdir(d)))
       {
          char *dot = strrchr(e->d_name, '.');
@@ -4296,7 +4296,7 @@ int main(int argc, const char *argv[])
    else
       of = fopen(outfile, "w");
    if (!of)
-      err(1, "%s", outfile ? : "-");
+      err(1, "Opening output [%s]", outfile ? : "-");
 
    if (!infile && !poptPeekArg(optCon) && !test)
       infile = "-";             // stdin by default
