@@ -2902,6 +2902,8 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                warning(x, "DESC with no ORDER in SQL");
                return x->end->next;
             };
+#if 0
+            // Expand as we go
             qadd("SELECT ");
             if (distinct)
                qadd("DISTINCT ");
@@ -2973,8 +2975,46 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                   qadd(v);
                }
             }
-#undef qadd
+#else
+            // Construct then expand
+            char *q;
+            size_t l;
+            FILE *o = open_memstream(&q, &l);
+            fprintf(o, "SELECT ");
+            if (distinct)
+               fprintf(o, "DISTINCT ");
+            fprintf(o, "%s", select ? : "*");
+            if (table)
+               fprintf(o, " FROM %s", table);
+            if (where)
+               fprintf(o, " WHERE %s", where);
+            if (key && key->value)
+            {
+               char *v = strrchr(key->value, '.');
+               v = getvar(v ? : key->value, 0);
+               fprintf(o, " WHERE %s='%s'", key->value, v ? : "");
+            }
+            if (group)
+               fprintf(o, " GROUP BY %s", group);
+            if (having)
+               fprintf(o, " HAVING %s", having);
+            if (order)
+            {
+               fprintf(o, " ORDER BY %s", order);
+               if (desc)
+                  fprintf(o, " DESC");
+               if (asc)
+                  fprintf(o, " ASC");
+            }
+            if (limit)
+               fprintf(o, " LIMIT %s", limit);
+            fclose(o);
+            v = expand(temp, sizeof(temp), q);
+            free(q);
+            qadd(v);
+#endif
          }
+#undef qadd
          {                      // Sanity check
             char q = 0;
             char *p;
