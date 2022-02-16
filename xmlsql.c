@@ -4144,6 +4144,11 @@ xmltoken *processxml(xmltoken * x, xmltoken * e, process_t * state)
 
 xmltoken *loadfile(char *fn)
 {
+   if (!fn || !*fn)
+   {
+      warn("Empty file included in input list, ignored");
+      return NULL;
+   }
    unsigned char *buf = 0;
    xmltoken *n;
    unsigned long all = 0;
