@@ -20,9 +20,373 @@
 #include <openssl/sha.h>
 #include "sqlexpand.h"
 
-// If success, returns malloced query string, and sets *errp to NULL
-// If success but warning, returns malloced query string, and sets *errp to warning text 
-// If failure, returns NULL, and sets *errp to error text
+// Low level dollar expansion parse
+struct dollar_expand_s {
+   unsigned char quote:1;       // Main processing flags
+   unsigned char list:1;
+   unsigned char file:1;
+   unsigned char literal:1;
+   unsigned char url:2;
+   unsigned char hash:2;
+   unsigned char base64:1;
+   unsigned char underscore:1;
+   unsigned int flags;
+   int index;                   // [n] index
+   const char *error;           // Error
+   char *name;            // Variable name (malloced copy)
+   const char *suffix;          // Set if :x suffixes - points to first :
+   char *malloced;              // Set if any malloced space has been used
+};
+
+const char *dollar_expand_name(dollar_expand_t * d)
+{                               // The extracted variable name
+   return d->name;
+}
+
+const char *dollar_expand_error(dollar_expand_t * d)
+{                               // The current error
+   return d->error;
+}
+
+// Initialises dollar_expand_t. Passed pointer to character after the $. Returns next character after parsing $ expansion args
+const char *dollar_expand_parse(dollar_expand_t * d, const char *p, unsigned int flags)
+{
+   memset(d, 0, sizeof(*d));
+   d->flags = flags;
+   char *fail(const char *e) {
+      d->error = e;
+      return NULL;
+   }
+   char curly = 0;
+   if (*p == '{')
+      curly = *p++;
+   // Prefixes
+   while (*p)
+   {
+      if (*p == '#')
+         d->hash++;
+      else if (*p == ',')
+         d->list++;
+      else if (*p == '*')
+         d->file++;
+      else if (*p == '%')
+         d->literal++;
+      else if (*p == '+')
+         d->url++;
+      else if (*p == '-')
+         d->underscore++;
+      else if (*p == '=')
+         d->base64++;
+      else
+         break;
+      p++;
+   }
+   {                            // Variable name
+      const char *s = p,
+          *e = p;               // The variable name
+      if (strchr("$/\\@<", *e))
+         e++;                   // Special one letter variable name
+      else if (curly)
+         while (*e && *e != '}' && *e != ':')
+            e++;                // In {...}
+      else if (isalpha(*e) || *e == '_')        // Simple
+         while (isalnum(*e) || *e == '_')
+            e++;
+      p = e;
+      if (e == s)
+         return fail("No variable name");
+      d->name = strndup(s, (int) (e - s));
+   }
+   // Index
+   if (*p == '[')
+   {
+      p++;
+      int index = 0;
+      if (!isdigit(*p))
+         return fail("Bad [n] suffix");
+      while (isdigit(*p))
+         index = index * 10 + *p++ - '0';
+      if (!index)
+         return fail("[0] not valid");
+      if (*p != ']')
+         return fail("Unclosed [...");
+      p++;
+      d->index = index;
+   }
+   // Suffix
+   if (*p == ':' && isalpha(p[1]))
+   {
+      d->suffix = p;
+      while (*p == ':' && isalpha(p[1]))
+         p += 2;
+   }
+   // End
+   if (curly && *p++ != '}')
+      return fail("Unclosed ${...");
+   return p;
+}
+
+// Passed the parsed dollar_expand_t, and a pointer to the value, returns processed value, e.g. after applying flags and suffixes, and so on
+const char *dollar_expand_process(dollar_expand_t * d, const char *value)
+{
+   if (!d)
+      return NULL;
+   if (d->error)
+      return NULL;
+   char *fail(const char *e) {
+      d->error = e;
+      return NULL;
+   }
+
+   if (d->file && value)
+   {                            // File fetch
+      if (!(d->flags & SQLEXPANDFILE))
+         return fail("$@ not allowed");
+      if (strstr(value, "/etc/"))
+         return fail("Not playing that game, file is has /etc/");
+      int i = open(value, O_RDONLY);
+      if (i >= 0)
+      {
+         size_t len,
+          got;
+         FILE *o = open_memstream(&d->malloced, &len);
+         char buf[16384];
+         while ((got = read(i, buf, sizeof(buf))) > 0)
+            fwrite(buf, got, 1, o);
+         fclose(o);
+         close(i);
+         value = d->malloced;
+      }
+   }
+
+   if (d->index && value)
+   {
+      int index = d->index;
+      const char *p = value,
+          *s = NULL;;
+      while (p && --d->index)
+      {
+         s = strchr(p, '\t');
+         if (s)
+            p = s + 1;
+         else
+            p = NULL;
+      }
+      if (index || !p)
+         value = "";
+      else
+      {
+         s = strchr(p, '\t');
+         if (s)
+            value = strndup(p, (int) (s - p));
+         else
+            value = strdup(p);
+         free(d->malloced);
+         d->malloced = (void *) value;
+      }
+   }
+   if (d->suffix)
+   {
+      const char *suffix = d->suffix;
+      while (value && *suffix == ':' && isalpha(suffix[1]))
+      {
+         switch (suffix[1])
+         {
+         case 'h':             // head in path - remove all after last /
+            {
+               char *s = strrchr(value, '/');
+               if (s)
+               {
+                  if (value == d->malloced)
+                     *s = 0;
+                  else
+                  {
+                     value = strndup(value, (int) (s - value));
+                     free(d->malloced);
+                     d->malloced = (void *) value;
+                  }
+               }
+            }
+            break;
+         case 't':             // tail in path - everything from past last slash, or if no slash then unchanged
+            {
+               char *s = strrchr(value, '/');
+               if (s)
+               {
+                  if (!d->malloced)
+                     value = s + 1;
+                  else
+                  {
+                     value = strdup(s + 1);
+                     free(d->malloced);
+                     d->malloced = (void *) value;
+                  }
+               }
+            }
+            break;
+         case 'e':             // extension on file
+            {
+               char *s = strrchr(value, '/');
+               if (!s)
+                  s = (char *) value;
+               s = strrchr(s, '.');
+               if (s)
+               {
+                  if (!d->malloced)
+                     value = s + 1;
+                  else
+                  {
+                     value = strdup(s + 1);
+                     free(d->malloced);
+                     d->malloced = (void *) value;
+                  }
+               } else
+                  value = "";
+            }
+            break;
+         case 'r':             // remove extension on file
+            {
+               char *s = strrchr(value, '/');
+               if (!s)
+                  s = (char *) value;
+               s = strrchr(s, '.');
+               if (s)
+               {
+                  if (value == d->malloced)
+                     *(char *) s = 0;
+                  else
+                  {
+                     value = strndup(value, (int) (s - value));
+                     free(d->malloced);
+                     d->malloced = (void *) value;
+                  }
+               }
+            }
+            break;
+         default:
+            return fail("Unknown $...: suffix");
+         }
+         suffix += 2;
+      }
+   }
+
+   if (d->underscore)
+   {
+      if (!d->malloced)
+         value = d->malloced = strdup(value);
+      for (char *p = (char *)value; *p; p++)
+         if (*p == '\'' || *p == '"' || *p == '`')
+            *p = '_';
+   }
+
+   if (d->url)
+   {                            // URL encode
+      char *new;
+      size_t l;
+      FILE *o = open_memstream(&new, &l);
+      const char *v = value;
+      while (*v)
+      {
+         if (*v == ' ' && d->url == 1)
+            fputc('+', o);
+         else if (*v <= ' ' || strchr("+=%\"'&<>?#!", *v) || (d->url > 1 && *v == '/'))
+         {
+            fputc('%', o);
+            int u = d->url;
+            while (u-- > 1)
+               fprintf(o, "25");
+            fprintf(o, "%02X", *v);
+         } else
+            fputc(*v, o);
+         v++;
+      }
+      fclose(o);
+      free(d->malloced);
+      value = new;
+      d->malloced = new;
+   }
+
+   void dobinary(const void *buf, int len) {  // Do a base64 or hex
+      char *new;
+      size_t l;
+      FILE *o = open_memstream(&new, &l);
+      const unsigned char *p = buf,
+          *e = p + len;
+      if (d->base64)
+      {
+         const char BASE64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+         unsigned int b = 0,
+             v = 0;
+         while (p < e)
+         {
+            b += 8;
+            v = (v << 8) + *p++;
+            while (b >= 6)
+            {
+               b -= 6;
+               fputc(BASE64[(v >> b) & ((1 << 6) - 1)], o);
+            }
+         }
+         if (b)
+         {                      // final bits
+            b += 8;
+            v <<= 8;
+            b -= 6;
+            fputc(BASE64[(v >> b) & ((1 << 6) - 1)], o);
+            while (b)
+            {                   // padding
+               while (b >= 6)
+               {
+                  b -= 6;
+                  fputc('=', o);
+               }
+               if (b)
+                  b += 8;
+            }
+         }
+      } else
+         while (p < e)
+            fprintf(o, "%02x", *p++);
+      fclose(o);
+      free(d->malloced);
+      value = new;
+      d->malloced = new;
+   }
+
+   if (d->hash)
+   {                            // Make a hash (hex or base64)
+      if (d->hash == 1)
+      {                         // MD5
+         unsigned char md5buf[16];
+         MD5_CTX c;
+         MD5_Init(&c);
+         MD5_Update(&c, value, strlen(value));
+         MD5_Final(md5buf, &c);
+         dobinary(md5buf, sizeof(md5buf));
+      } else if (d->hash == 2)
+      {
+         unsigned char sha1buf[20];
+         SHA_CTX c;
+         SHA1_Init(&c);
+         SHA1_Update(&c, value, strlen(value));
+         SHA1_Final(sha1buf, &c);
+         dobinary(sha1buf, sizeof(sha1buf));
+      } else
+         return fail("Unknown hash to use");
+   } else if (d->base64)
+      dobinary(value, strlen(value));   // Base64
+   return value;
+}
+
+// Frees space created (including any used for return from dollar_expand_process)
+void dollar_expand_free(dollar_expand_t * d)
+{
+   free(d->name);
+   free(d->malloced);
+   memset(d, 0, sizeof(*d));
+}
+
+// SQL parse
 char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp, unsigned int flags)
 {
    if (errp)
@@ -92,9 +456,12 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          fputc(*p++, f);
          continue;
       }
+      p++;
+
+
+
       malloced = NULL;
       // $ expansion
-      p++;
       char curly = 0;
       if (*p == '{')
          curly = *p++;
