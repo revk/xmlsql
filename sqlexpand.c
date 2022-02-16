@@ -32,7 +32,6 @@ struct dollar_expand_s {
    unsigned char underscore:1;  // $-
    unsigned int flags;          // Supplied flags
    int index;                   // [n] index
-   const char *error;           // Error
    char *name;                  // Variable name (malloced copy)
    const char *suffix;          // Set if :x suffixes - points to first :
    char *malloced;              // Set if any malloced space has been used
@@ -41,11 +40,6 @@ struct dollar_expand_s {
 const char *dollar_expand_name(dollar_expand_t * d)
 {                               // The extracted variable name
    return d->name;
-}
-
-const char *dollar_expand_error(dollar_expand_t * d)
-{                               // The current error
-   return d->error;
 }
 
 unsigned char dollar_expand_literal(dollar_expand_t * d)
@@ -69,13 +63,24 @@ unsigned char dollar_expand_underscore(dollar_expand_t * d)
 }
 
 // Initialises dollar_expand_t. Passed pointer to character after the $. Returns next character after parsing $ expansion args
-const char *dollar_expand_parse(dollar_expand_t * d, const char *p)
+dollar_expand_t *dollar_expand_parse(const char **sourcep, const char **errp)
 {
-   memset(d, 0, sizeof(*d));
-   char *fail(const char *e) {
-      d->error = e;
+   dollar_expand_t *d = NULL;
+   if (errp)
+      *errp = NULL;
+   dollar_expand_t *fail(const char *e) {
+      free(d);
+      if (errp)
+         *errp = e;
       return NULL;
    }
+   if (!sourcep)
+      return NULL;
+   d = malloc(sizeof(*d));
+   if (!d)
+      errx(1, "malloc");
+   memset(d, 0, sizeof(*d));
+   const char *p = *sourcep;
    char curly = 0;
    if (*p == '{')
       curly = *p++;
@@ -144,18 +149,20 @@ const char *dollar_expand_parse(dollar_expand_t * d, const char *p)
    // End
    if (curly && *p++ != '}')
       return fail("Unclosed ${...");
-   return p;
+   *sourcep = p;
+   return d;
 }
 
 // Passed the parsed dollar_expand_t, and a pointer to the value, returns processed value, e.g. after applying flags and suffixes, and so on
-char *dollar_expand_process(dollar_expand_t * d, const char *value, unsigned int flags)
+char *dollar_expand_process(dollar_expand_t * d, const char *value, const char **errp, unsigned int flags)
 {
+   if (errp)
+      *errp = NULL;
    if (!d)
       return NULL;
-   if (d->error)
-      return NULL;
    char *fail(const char *e) {
-      d->error = e;
+      if (errp)
+         *errp = e;
       return NULL;
    }
 
@@ -400,11 +407,15 @@ char *dollar_expand_process(dollar_expand_t * d, const char *value, unsigned int
 }
 
 // Frees space created (including any used for return from dollar_expand_process)
-void dollar_expand_free(dollar_expand_t * d)
+void dollar_expand_free(dollar_expand_t ** dd)
 {
+   if (!dd)
+      return;
+   dollar_expand_t *d = *dd;
+   *dd = NULL;
    free(d->name);
    free(d->malloced);
-   memset(d, 0, sizeof(*d));
+   free(d);
 }
 
 // SQL parse
@@ -416,7 +427,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       getvar = getenv;          // Default
    if (!query)
       return NULL;              // Uh?
-   dollar_expand_t d;
+   dollar_expand_t *d;
    const char *warn = NULL;
    char *expanded = NULL;
    char *malloced = NULL;       // For when variable is malloced
@@ -480,11 +491,14 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          continue;
       }
       p++;
-      p = dollar_expand_parse(&d, p);
-      if (!p)
-         return fail(dollar_expand_error(&d));
+      const char *e;
+      d = dollar_expand_parse(&p, &e);
+      if (!d)
+         return fail(e);
+      if (e)
+         warn = e;
 
-      const char *name = dollar_expand_name(&d);
+      const char *name = dollar_expand_name(d);
       char *value = NULL;
       if (!name[1] && *name == '$')
       {
@@ -536,9 +550,11 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
 
       if (value)
       {
-         value = dollar_expand_process(&d, value, flags);
+         value = dollar_expand_process(d, value, &e, flags);
          if (!value)
-            fail(dollar_expand_error(&d));
+            fail(e);
+         if (e)
+            warn = e;
       }
 
       if (!value && !q && (flags & SQLEXPANDZERO))
@@ -551,8 +567,8 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          value = "";
       }
 
-      unsigned char literal = dollar_expand_literal(&d);
-      unsigned char list = dollar_expand_list(&d);
+      unsigned char literal = dollar_expand_literal(d);
+      unsigned char list = dollar_expand_list(d);
       if (literal)
       {                         // Output value (literal)
          if (!(flags & SQLEXPANDUNSAFE))

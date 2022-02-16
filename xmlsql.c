@@ -378,7 +378,7 @@ char *getvarexpand(const char *n)
 }
 
 
-char *expandd(char *buf, int len, char *i, char sum)
+char *expandd(char *buf, int len, const char *i, char sum)
 {                               // expand a string (sum set if allow variables without $ and default variables to zero, for maths in eval, etc)
    char *o = buf,
        *x = buf + len - 1;
@@ -386,7 +386,7 @@ char *expandd(char *buf, int len, char *i, char sum)
       return NULL;
    {
 // Does it need expanding?
-      char *p = i;
+      const char *p = i;
       while (*p)
       {
          if (*p == '$'
@@ -403,7 +403,7 @@ char *expandd(char *buf, int len, char *i, char sum)
          p++;
       }
       if (!*p)
-         return i;              // Unchanged 
+         return (char *) i;     // Unchanged 
    }
    // Expand
    char quote = 0,
@@ -421,8 +421,9 @@ char *expandd(char *buf, int len, char *i, char sum)
 #endif
           )
       {
-#if 0
-         dollar_expand_t d;
+#if 1
+         const char *e;
+         dollar_expand_t *d;
          char *fail(const char *e) {
             warnx("Expand failed: %s\n", e);
             dollar_expand_free(&d);
@@ -430,10 +431,12 @@ char *expandd(char *buf, int len, char *i, char sum)
          }
          if (*i == '$')
             i++;
-         i = dollar_expand_parse(&d, i) if (!i)
-            if (!i)
-               return fail(dollar_expand_error(&d));
-         char *name = dollar_expand_name(&d);
+         d = dollar_expand_parse(&i, &e);
+         if (!d)
+            return fail(e);
+         if (e)
+            warnx("Expand: %s\n[%s]", e, i);
+         const char *name = dollar_expand_name(d);
          if (!strcmp(name, "$"))
          {
             o += sprintf(o, "%d", getppid());
@@ -450,13 +453,59 @@ char *expandd(char *buf, int len, char *i, char sum)
             o += sprintf(o, "%ld", when);
          } else
          {
-            char *value = getvar(name, 0);
-            if (value)
+            char query = dollar_expand_query(d);
+            char *v = getvar(name, 0);
+            if (!v && query)
             {
-               value = dollar_expand_process(&d, 0);
-               if (value)
+               dollar_expand_free(&d);
+               return NULL;     // expand fails as variable does not exist
+            }
+            if ((!v || !*v) && sum)
+               v = "0";
+
+            if (v && !query)
+            {
+               v = dollar_expand_process(d, v, &e, 0);
+               if (v)
                {
-                  // TODO - generate output with appropriate flags used for escaping if needed
+                  char safe = dollar_expand_underscore(d);
+                  char comma = dollar_expand_list(d);
+                  if (safe)
+                  {
+                     while (*v && o < x)
+                     {
+                        if (*v == '\'' || *v == '"')
+                           *o = '_';
+                        else
+                           *o = *v;
+                        o++;
+                        v++;
+                     }
+                  } else
+                  if (quote || comma)
+                  {
+                     if (comma && !quote && o < x)
+                        *o++ = '"';     // List expansion
+                     while (*v && o < x)
+                     {
+                        if (comma && (*v == '\t' || *v == ',') && o < x)
+                           *o++ = (quote ? : '"');      // List expansion
+                        if (*v == quote && o < x)
+                           *o++ = '\\';
+                        if (comma && (*v == '\t' || *v == ',') && o < x)
+                           *o++ = ',';
+                        else if (o < x)
+                           *o++ = *v;
+                        if (comma && (*v == '\t' || *v == ',') && o < x)
+                           *o++ = (quote ? : '"');      // List expansion
+                        v++;
+                     }
+                     if (comma && !quote && o < x)
+                        *o++ = '"';     // List expansion
+                  } else
+                  while (*v && o < x)
+                     *o++ = *v++;       // simple expansion
+
                }
             }
          }
@@ -639,6 +688,7 @@ char *expandd(char *buf, int len, char *i, char sum)
             while (*v && o < x)
                *o++ = *v++;     // simple expansion
          }
+#endif
       } else if (*i == '\\' && i[1])
       {
          *o++ = *i++;
@@ -651,7 +701,6 @@ char *expandd(char *buf, int len, char *i, char sum)
             quote = *i;
          *o++ = *i++;
       }
-#endif
    }
    *o = 0;
    xmlutf8(buf);
