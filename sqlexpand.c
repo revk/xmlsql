@@ -22,15 +22,15 @@
 
 // Low level dollar expansion parse
 struct dollar_expand_s {
-   unsigned char quote:1;       // Main processing flags
-   unsigned char list:1;
-   unsigned char file:1;
-   unsigned char literal:1;
-   unsigned char url:2;
-   unsigned char hash:2;
-   unsigned char base64:1;
-   unsigned char underscore:1;
-   unsigned int flags;
+   unsigned char query:1;       // $?
+   unsigned char literal:1;     // $%
+   unsigned char list:1;        // $,
+   unsigned char file:1;        // $*
+   unsigned char url:2;         // $+
+   unsigned char hash:2;        // $#
+   unsigned char base64:1;      // $=
+   unsigned char underscore:1;  // $-
+   unsigned int flags;          // Supplied flags
    int index;                   // [n] index
    const char *error;           // Error
    char *name;                  // Variable name (malloced copy)
@@ -53,14 +53,14 @@ unsigned char dollar_expand_literal(dollar_expand_t * d)
    return d->literal;
 }
 
-unsigned char dollar_expand_quote(dollar_expand_t * d)
-{                               // Flags
-   return d->quote;
-}
-
 unsigned char dollar_expand_list(dollar_expand_t * d)
 {                               // Flags
    return d->list;
+}
+
+unsigned char dollar_expand_query(dollar_expand_t * d)
+{                               // Flags
+   return d->query;
 }
 
 // Initialises dollar_expand_t. Passed pointer to character after the $. Returns next character after parsing $ expansion args
@@ -78,7 +78,9 @@ const char *dollar_expand_parse(dollar_expand_t * d, const char *p, unsigned int
    // Prefixes
    while (*p)
    {
-      if (*p == '#')
+      if (*p == '?')
+         d->query++;
+      else if (*p == '#')
          d->hash++;
       else if (*p == ',')
          d->list++;
@@ -100,7 +102,7 @@ const char *dollar_expand_parse(dollar_expand_t * d, const char *p, unsigned int
       const char *s = p,
           *e = p;               // The variable name
       if (strchr("$/\\@<", *e))
-         e++;                   // Special one letter variable name
+         e++;                   // Special one letter variable names
       else if (curly)
          while (*e && *e != '}' && *e != ':')
             e++;                // In {...}
@@ -546,12 +548,9 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       }
 
       unsigned char literal = dollar_expand_literal(&d);
-      unsigned char quote = dollar_expand_quote(&d);
       unsigned char list = dollar_expand_list(&d);
       if (literal)
       {                         // Output value (literal)
-         if (quote)
-            return fail("$% used with quote prefix");
          if (list)
             return fail("$% used with list prefix");
          while (*value)
@@ -576,7 +575,8 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          }
       } else
       {                         // Output value (processed)
-         if (!q && (list || quote))
+         char quote = 0;
+         if (!q && list)
          {
             fputc(q = '"', f);
             quote = 1;          // Ensures we close it

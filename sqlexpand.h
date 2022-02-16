@@ -17,9 +17,9 @@ void dollar_expand_free(dollar_expand_t*);
 
 const char *dollar_expand_name(dollar_expand_t*); // The extracted variable name
 const char *dollar_expand_error(dollar_expand_t*);	// The current error
-unsigned char dollar_expand_literal(dollar_expand_t*);	// Flags
-unsigned char dollar_expand_quote(dollar_expand_t*);	// Flags
-unsigned char dollar_expand_list(dollar_expand_t*);	// Flags
+unsigned char dollar_expand_literal(dollar_expand_t*);	// Flags $%
+unsigned char dollar_expand_list(dollar_expand_t*);	// Flags $,
+unsigned char dollar_expand_query(dollar_expand_t*);	// Flags $?
 
 // SQL query expansion
 typedef char *sqlexpandgetvar_t(const char *);
