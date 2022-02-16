@@ -3010,29 +3010,37 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                warning(x, "DESC with no ORDER in SQL");
                return x->end->next;
             };
+            char *exp(char *p) {
+               if (!p)
+                  return NULL;
+               p = expand(temp, sizeof(temp), p);
+               if (!*p)
+                  return NULL;
+               return p;
+            }
+#define ex(n) (n=exp(n))
             // Construct then expand
-            char *q;
             size_t l;
-            FILE *o = open_memstream(&q, &l);
+            FILE *o = open_memstream(&query, &l);
             fprintf(o, "SELECT ");
             if (distinct)
                fprintf(o, "DISTINCT ");
             fprintf(o, "%s", select ? : "*");
-            if (table)
+            if (ex(table))
                fprintf(o, " FROM %s", table);
-            if (where && *where)
+            if (ex(where))
                fprintf(o, " WHERE %s", where);
-            if (key && key->value)
+            else if (key && key->value)
             {
                char *v = strrchr(key->value, '.');
                v = getvar(v ? : key->value, 0);
                fprintf(o, " WHERE %s='%s'", key->value, v ? : "");
             }
-            if (group && *group)
+            if (ex(group))
                fprintf(o, " GROUP BY %s", group);
-            if (having && *having)
+            if (ex(having))
                fprintf(o, " HAVING %s", having);
-            if (order && *order)
+            if (ex(order))
             {
                fprintf(o, " ORDER BY %s", order);
                if (desc)
@@ -3040,22 +3048,9 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                if (asc)
                   fprintf(o, " ASC");
             }
-            if (limit && *limit)
+            if (ex(limit))
                fprintf(o, " LIMIT %s", limit);
             fclose(o);
-#if 0
-            const char *e;
-            v = sqlexpand(q, getvarexpand, &e, SQLEXPANDPPID | SQLEXPANDZERO | SQLEXPANDBLANK | SQLEXPANDUNSAFE);
-            if (e || !v)
-               fprintf(stderr, "%s:%d Expansion: %s\n[%s]\n[%s]", x->filename, x->line, e, q, v);
-            query = v;
-#else
-            v = expand(temp, sizeof(temp), q);
-            if (!v)
-               warnx("Failed to expand: %s", q);
-            query = strdup(v);
-#endif
-            free(q);
          }
 #undef qadd
          {                      // Sanity check
@@ -3081,7 +3076,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                      if (!p[1])
                      {
                         *p = 0;
-                        warnx("%s:%d Trailing ; on sql query, ignored.", x->filename, x->line, query);
+                        warnx("%s:%d Trailing ; on sql query, ignored: %s", x->filename, x->line, query);
                      } else
                         errx(1, "%s:%d Multiple query attempt in SQL query: %s", x->filename, x->line, query);
                   }
