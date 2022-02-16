@@ -415,7 +415,7 @@ char *expandd(char *buf, int len, const char *i, char sum)
    {
       if (*i == '?')
          query++;
-      if ((*i == '$' && i[1] != '(')    // Note $( is jquery crap so we ignore
+      if ((*i == '$' && i[1] && i[1] != '('&&!isspace(i[1]))    // Note $( is jquery crap so we ignore and use in text
 #ifndef  BODGEEVAL
           || (sum && isalpha(*i) && (i == base || !isalnum(i[-1])))
 #endif
