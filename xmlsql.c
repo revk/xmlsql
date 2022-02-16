@@ -613,7 +613,7 @@ char *expandd(char *buf, int len, char *i, char sum)
 
 char *expand(char *buf, int len, char *i)
 {
-#if 0
+#if 1
    return expandd(buf, len, i, 0);
 #else
    const char *e;
@@ -636,7 +636,7 @@ char *expand(char *buf, int len, char *i)
 
 char *expandz(char *buf, int len, char *i)
 {
-#if 0
+#if 1
    return expandd(buf, len, i, 1);
 #else
    const char *e;
