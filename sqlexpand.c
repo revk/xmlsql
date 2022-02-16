@@ -103,7 +103,8 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
           url = 0,
           hash = 0,
           base64 = 0,
-          underscore = 0;
+          underscore = 0,
+	  conditional=0;
       while (*p)
       {
          if (*p == '#')
@@ -120,6 +121,8 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             underscore++;
          else if (*p == '=')
             base64++;
+         else if (*p == '?')
+            conditional++;
          else
             break;
          p++;
@@ -168,18 +171,11 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       char *value = NULL;
       if (!name[1] && *name == '$')
       {
-         if (flags & SQLEXPANDXMLSQL)
-         {                      // Literal $
-            fputc('$', f);
-            value = "";
-         } else
-         {
             if (!(flags & SQLEXPANDPPID))
                return fail("$$ not allowed");
             if (asprintf(&malloced, "%d", getppid()) < 0)
                err(1, "malloc");
             value = malloced;
-         }
       } else if (!name[1] && *name == '@')
       {                         // Cache feature id
          struct stat s = { };
@@ -456,6 +452,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
          value = "";
       if (!value)
       {
+	      if(conditional&&(flags&SQLEXPANDCONDITIONAL))return fail(NULL); // $? failed
          warn = "Missing variable";
          value = "";
       }
@@ -622,7 +619,7 @@ int main(int argc, const char *argv[])
    int dosafe = 0;
    int dozero = 0;
    int doblank = 0;
-   int doxmlsql = 0;
+   int doconditional=0;
    const char *query = NULL;
    {                            // POPT
       poptContext optCon;       // context for parsing command-line options
@@ -632,7 +629,7 @@ int main(int argc, const char *argv[])
          { "safe", 0, POPT_ARG_NONE, &dosafe, 0, "Do not allow ($%)" },
          { "zero", 0, POPT_ARG_NONE, &dozero, 0, "Do 0 for missing unquoted expansion" },
          { "blank", 0, POPT_ARG_NONE, &doblank, 0, "Allow blank for missing expansion" },
-         { "xmlsql", 0, POPT_ARG_NONE, &doxmlsql, 0, "Use xmlsql prefixes" },
+         { "conditional", 0, POPT_ARG_NONE, &doconditional, 0, "Allow $? for conditional" },
          POPT_AUTOHELP { }
       };
 
@@ -666,8 +663,8 @@ int main(int argc, const char *argv[])
       flags |= SQLEXPANDZERO;
    if (doblank)
       flags |= SQLEXPANDBLANK;
-   if (doxmlsql)
-      flags |= SQLEXPANDXMLSQL;
+   if (doconditional)
+      flags |= SQLEXPANDCONDITIONAL;
    if (!dosafe)
       flags |= SQLEXPANDUNSAFE;
    const char *e = NULL;

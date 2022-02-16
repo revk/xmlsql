@@ -19,20 +19,15 @@
 <p>Database access is optional, and if no &lt;SQL...&gt; tags are used then not database controls need be specified.</p>
 <p>There are --debug and --comment options which provide more information about what is happening and any errors.</p>
 <h2>Variables</h2>
-<p>One of the key features is the use of variables. In some cases a variable can be referenced simply by name, such as in &lt;INPUT&nbsp;NAME=<i>name</i>...&gt;, but they can also be used within any attribute of any tage using the $ prefix. E.g. &lt;A&nbsp;HREF="test.cgi?X=$X"&gt; where $X is expanded to the content of the variable X.</p>
+<p>One of the key features is the use of variables. In some cases a variable can be referenced simply by name, such as in &lt;INPUT&nbsp;NAME=<i>name</i>...&gt;, but they can also be used within any attribute of any tag using the $ prefix. E.g. &lt;A&nbsp;HREF="test.cgi?X=$X"&gt; where $X is expanded to the content of the variable X.</p>
 <p>When looking up a variable, first the current SQL query (if any) is checked for an exact match to a field name. Any outer nested SQL queries are checked in order until a match is found. Then any locally set variables are checked, and finally any environment variables. Finding no match means an empty string for $<i>name</i> expansion and means no effect on the source for changes to INPUT/SELECT/TEXTAREA fields.</p>
-<fieldset><legend>Note</legend>When specifying stdin using &lt;&lt; in a shell, you have to consider the escaping done by the shell. E.g. <tt>$name</tt> will expand <i>name</i> before passing to xmlsql. In this case you need to use <tt>\$name</tt> to ensure xmlsql sees the variable and expands as you need.</fieldset>
-<p>There is special processing for use in INPUT and TEXTAREA to ensure that the content of the variable is correctly quoted.</p>
-<p>You can also use ${<i>name</i>} where the next character would look like part of the variable name.</p>
-<p>You can use $+<i>name</i> to force URL expansion of the content - usually used when in HREF="...", additional +s for extra levels of encoding</p>
-<p>You can use $-<i>name</i> to force safe expansion of the content replacing ' or " with underscore</p>
-<p>You can use $#<i>name</i> to force use an MD5 of the variable content instead.</p>
-<p>You can use $,<i>name</i> when used within quotes causes commas to be unquoted to allow simple list expansion i.e IN ($,list).</p>
-<p>You can use $##<i>name</i> to force use an SHA1 of the variable content instead.</p>
-<p>You can use $?<i>name</i> in an attribute value to cause the attribute to be totally omitted if the <i>name</i> is not defined. It does not expand the value. e.g. tag="$?x$x" will be like tag="$x" if x is defined and nothing, not even tag="", if not defined. Any $?<i>name</i> not defined in an attribute value causes the whole attribute to be omitted.</p>
-<p>You can use $$ to mean an actual $ character. Note within shell this would be \$\$.</p>
-<p>You can use $@ for reference to use for cache control, e.g. thing.css?$@.</p>
-<p>Note use of $ expansion within "" or '' will cause any expansion of " or ' to be prefixed with \</p>
+<p><b>It is strongly recommended that the arguments for <tt>xmlsq</tt> are not processed by the shell, e.g. for csh use <tt>&lt;&lt;&nbsp;'END'</tt> rather than <tt>END</tt>.</b></p>
+<p>In most cases the <tt>$</tt> expansion uses the rules as specified for the <tt><a href="sqlexpand.html">xmlexpand</a></tt> command. However, there are some exceptions.</p>
+<ul>
+	<li>If an attribute value starts <tt>$?<i>name</i></tt> then the whole attribute is ignored if the variable <i>name</i> does not exist.</li>
+	<li>Nested expansion is allowed, e.g. <tt>${$<i>name</i>}</tt> gets <tt>$<i>name</i></tt> and then gets a variable by that name.</li>
+</ul>
+<p>In the case of the tags for generating an SQL query, the operations are exactly the same as the <tt><a href="sqlexpand.html">xmlexpand</a></tt> command.</p>
 <h2>Special tags</h2>
 <p><i>xmlsql</i> alters the content of some standard HTML tags such as INPUT, OPTION, and TEXTAREA. It also includes some specific <i>xmlsql</i> tags SQL, IF, and WHILE. These tags can (and should) be prefixed with the namespace XMLSQL:, e.g. &lt;XMLSQL:IF...&gt; rather than just &lt;IF...&gt;.</p>
 <p>The special tags SQL, IF, WHILE and WHEN all require the tag to be specifically closed. These tags, as well as SELECT and TEXTAREA, must not over lap (i.e. &lt;IF...&gt;...&lt;SQL...&gt;...&lt;/IF&gt;...&lt;/SQL&gt; is not valid). The end of each tag is matched to the first. If there is a mismatch with no end tag then the starting tag is not processed. And end tag with no start tag just shows in the output as is. If you use --comment or --debug an error is reported where this is found.</p>

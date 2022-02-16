@@ -340,7 +340,7 @@ char *getvar(char *n, int *lenp)
    if (!n)
       return 0;
    if (*n == '$')
-      n = getvar(n + 1, NULL);
+      n = getvar(n + 1, NULL); // Nested get, e.g. ${$X}
    // check SQL
    while (l)
    {
@@ -425,9 +425,9 @@ char *expandd(char *buf, int len, char *i, char sum)
          if (*i == '$')
          {
             i++;
-            if (*i == '$')
-            {
-               *o++ = *i++;
+            if (*i == '$') 
+            { // Parent PID
+		    o+=sprintf(o,"%d",getppid());
                continue;
             }
             if (*i == '@')

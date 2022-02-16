@@ -11,10 +11,10 @@ typedef char *sqlexpandgetvar_t(const char *);
 #define	SQLEXPANDPPID 		8	// Handle $$ as parent pid
 #define	SQLEXPANDZERO		16	// Handle missing unquoted expansion as a number (0)
 #define	SQLEXPANDBLANK		32	// Handle missing expansion as a blank (no error or warning)
-#define	SQLEXPANDXMLSQL		128	// XMLSQL prefixes
+#define	SQLEXPANDCONDITIONAL	64	// Handle $? to make whole value fail if $? used and name does not exist
 
 // If success, returns malloced query string, and sets *errp to NULL
 // If success but warning, returns malloced query string, and sets *errp to warning text 
 // If failure, returns NULL, and sets *errp to error text
-// If $? is used and variable does not exist return is NULL and error set to NULL
+// If $?name is used and variable does not exist return is NULL and error set to NULL if expansion of name fails
 char *sqlexpand(const char *query,sqlexpandgetvar_t *getvar,const char **errp,unsigned int flags);
