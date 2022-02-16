@@ -70,7 +70,7 @@ dollar_expand_t *dollar_expand_parse(const char **sourcep, const char **errp)
       *errp = NULL;
    dollar_expand_t *fail(const char *e) {
       free(d);
-      if (errp)
+      if (errp && !*errp)
          *errp = e;
       return NULL;
    }
@@ -110,8 +110,8 @@ dollar_expand_t *dollar_expand_parse(const char **sourcep, const char **errp)
    {                            // Variable name
       const char *s = p,
           *e = p;               // The variable name
-      if (strchr("$/\\@<", *e))
-         e++;                   // Special one letter variable names
+      if (strchr("/\\@<", *e) || (!curly && *e == '$'))
+         e++;                   // Special one letter variable names - $$ is a pain and needs dropping
       else if (curly)
          while (*e && *e != '}' && *e != ':')
             e++;                // In {...}
@@ -161,7 +161,7 @@ char *dollar_expand_process(dollar_expand_t * d, const char *value, const char *
    if (!d)
       return NULL;
    char *fail(const char *e) {
-      if (errp)
+      if (errp && !*errp)
          *errp = e;
       return NULL;
    }
@@ -436,10 +436,11 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
    size_t len;
    FILE *f = open_memstream(&expanded, &len);
    char *fail(const char *e) {  // For direct exit with error
-      fclose(f);
+      if (f)
+         fclose(f);
       free(expanded);
       free(malloced);
-      if (errp)
+      if (errp && !*errp)
          *errp = e;
       dollar_expand_free(&d);
       return NULL;
@@ -684,6 +685,9 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
    if (q)
       return fail("Mismatched quotes");
    fclose(f);
+   f = NULL;
+   free(malloced);
+   malloced = NULL;
    // Check final query
    p = expanded;
    while (*p)
@@ -702,24 +706,15 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       else if (!q && (*p == '\'' || *p == '"' || *p == '`'))
          q = *p;
       else if (!q && (*p == '#' || (*p == '/' && p[1] == '*') || (*p == '-' && p[1] == '-' && (!p[2] || isspace(p[2])))))
-      {
-         free(expanded);
-         if (errp)
-            *errp = "Comment found in expanded query";
-         return NULL;
-      } else if (!q && *p == ';')
-      {
-         free(expanded);
-         if (errp)
-            *errp = "Semi colon found in expanded query";
-         return NULL;
-      }
+         return fail("Comment found in expanded query");
+      else if (!q && *p == ';')
+         return fail("Semi colon found in expanded query");
       p++;
    }
    if (q)
    {
       free(expanded);
-      if (errp)
+      if (errp && !*errp)
          *errp = "Unclosed quoting in expanded query";
       return NULL;
    }
