@@ -437,6 +437,9 @@ char *expandd(char *buf, int len, const char *i, char sum)
          if (e)
             warnx("Expand: %s\n[%s]", e, i);
          const char *name = dollar_expand_name(d);
+	 if(!name)
+		 warnx("Unexpected no name: %s",i);
+	 else
          if (!strcmp(name, "$"))
          {
             o += sprintf(o, "%d", getppid());
