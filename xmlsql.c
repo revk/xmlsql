@@ -415,7 +415,7 @@ char *expandd(char *buf, int len, const char *i, char sum)
    {
       if (*i == '?')
          query++;
-      if ((*i == '$' && i[1] && i[1] != '('&&!isspace(i[1]))    // Note $( is jquery crap so we ignore and use in text
+      if ((*i == '$' && i[1] && i[1] != '(' && !isspace(i[1]))  // Note $( is jquery crap so we ignore and use in text
 #ifndef  BODGEEVAL
           || (sum && isalpha(*i) && (i == base || !isalnum(i[-1])))
 #endif
@@ -2944,7 +2944,6 @@ xmltoken *dosql(xmltoken * x, process_t * state)
    if (sqlconnected)
    {
       {                         // construct query
-         char *query = 0;
          char *litquery = getatt(x, "QUERY");
          xmlattr *key = xmlfindattr(x, "KEY");
          char *select = getatt(x, "SELECT");
@@ -2962,13 +2961,8 @@ xmltoken *dosql(xmltoken * x, process_t * state)
          if ((json && json->value) || (jsarray && jsarray->value) || (tablerow && tablerow->value))
             out = open_memstream(&outdata, &outsize);
          char temp[MAXTEMP];
-         int l = 2000,
-             p = 0;
          char *v;
-         query = malloc(l);
-         if (!query)
-            errx(1, "malloc at line %d", __LINE__);
-#define qadd(s)	do{if(s){int n=strlen(s);if(p+n+1>=l&&!(query=realloc(query,(l=p+n+100))))errx(1,"malloc");memmove(query+p,s,n+1);p+=n;}}while(0)
+         char *query = NULL;
          xmlattr *desc = xmlfindattr(x, "DESC");
          xmlattr *asc = xmlfindattr(x, "ASC");
          xmlattr *distinct = xmlfindattr(x, "DISTINCT");
@@ -3003,7 +2997,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             v = expand(temp, sizeof(temp), litquery);
             if (!v)
                warnx("Failed to expand: %s", litquery);
-            qadd(v);
+            query = strdup(v);
          } else
          {                      // construct query
             if (key && key->value && where)
@@ -3054,13 +3048,12 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             v = sqlexpand(q, getvarexpand, &e, SQLEXPANDPPID | SQLEXPANDZERO | SQLEXPANDBLANK | SQLEXPANDUNSAFE);
             if (e || !v)
                fprintf(stderr, "%s:%d Expansion: %s\n[%s]\n[%s]", x->filename, x->line, e, q, v);
-            qadd(v);
-            free(v);
+            query = v;
 #else
             v = expand(temp, sizeof(temp), q);
             if (!v)
                warnx("Failed to expand: %s", q);
-            qadd(v);
+            query = strdup(v);
 #endif
             free(q);
          }
