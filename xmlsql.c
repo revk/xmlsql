@@ -3009,9 +3009,16 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             if (limit)
                fprintf(o, " LIMIT %s", limit);
             fclose(o);
-            v = expand(temp, sizeof(temp), q);
-            free(q);
+#if 1
+	    const char *e;
+	    v=sqlexpand(q,getvarexpand,&e,SQLEXPANDPPID|SQLEXPANDZERO|SQLEXPANDBLANK);
             qadd(v);
+	    free(v);
+#else
+            v = expand(temp, sizeof(temp), q);
+            qadd(v);
+#endif
+            free(q);
 #endif
          }
 #undef qadd
