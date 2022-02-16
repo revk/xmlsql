@@ -412,6 +412,7 @@ void dollar_expand_free(dollar_expand_t ** dd)
    if (!dd)
       return;
    dollar_expand_t *d = *dd;
+   if(!d)return;
    *dd = NULL;
    free(d->name);
    free(d->malloced);

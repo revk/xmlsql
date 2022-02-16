@@ -423,7 +423,7 @@ char *expandd(char *buf, int len, const char *i, char sum)
       {
 #if 1
          const char *e;
-         dollar_expand_t *d;
+         dollar_expand_t *d = NULL;
          char *fail(const char *e) {
             warnx("Expand failed: %s\n", e);
             dollar_expand_free(&d);
@@ -710,16 +710,12 @@ char *expandd(char *buf, int len, const char *i, char sum)
 
 char *expand(char *buf, int len, char *i)
 {
-   char *ret= expandd(buf, len, i, 0);
-   if(!ret)warnx("Failed: %s",i);
-   return ret;
+   return expandd(buf, len, i, 0);
 }
 
 char *expandz(char *buf, int len, char *i)
 {
-   char *ret= expandd(buf, len, i, 1);
-       if(!ret)warnx("Failed: %s",i);
-     return ret;
+   return expandd(buf, len, i, 1);
 }
 
 static void xputc(unsigned char c, FILE * f, int flags)
