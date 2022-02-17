@@ -3061,6 +3061,8 @@ xmltoken *dosql(xmltoken * x, process_t * state)
             {
                if (*p == '\\' && p[1])
                {
+                  if (!p[1])
+                     errx(1, "%s:%d Trailing \\ in SQL query: %s", x->filename, x->line, query);
                   p++;
                   continue;
                }
