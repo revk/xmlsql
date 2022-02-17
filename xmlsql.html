@@ -27,7 +27,7 @@
 	<li>If an attribute value starts <tt>$?<i>name</i></tt> then the whole attribute is ignored if the variable <i>name</i> does not exist.</li>
 	<li>Nested expansion is allowed, e.g. <tt>${$<i>name</i>}</tt> gets <tt>$<i>name</i></tt> and then gets a variable by that name.</li>
 </ul>
-<p>In the case of the tags for generating an SQL query, the operations are exactly the same as the <tt><a href="sqlexpand.html">xmlexpand</a></tt> command.</p>
+<p>In the case of the tags for generating an SQL query, the operations are exactly the same as the <tt><a href="SQLlib/sqlexpand.html">xmlexpand</a></tt> command.</p>
 <h2>Special tags</h2>
 <p><i>xmlsql</i> alters the content of some standard HTML tags such as INPUT, OPTION, and TEXTAREA. It also includes some specific <i>xmlsql</i> tags SQL, IF, and WHILE. These tags can (and should) be prefixed with the namespace XMLSQL:, e.g. &lt;XMLSQL:IF...&gt; rather than just &lt;IF...&gt;.</p>
 <p>The special tags SQL, IF, WHILE and WHEN all require the tag to be specifically closed. These tags, as well as SELECT and TEXTAREA, must not over lap (i.e. &lt;IF...&gt;...&lt;SQL...&gt;...&lt;/IF&gt;...&lt;/SQL&gt; is not valid). The end of each tag is matched to the first. If there is a mismatch with no end tag then the starting tag is not processed. And end tag with no start tag just shows in the output as is. If you use --comment or --debug an error is reported where this is found.</p>
