@@ -639,7 +639,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
             }
             if (!v || *v)
             {
-               warn = "Invalid number in $ expansion";
+               warn = "Expansion outside any quotes is not a clean number";
                value = (flags & SQLEXPANDZERO) ? "0" : "";
             }
          }
