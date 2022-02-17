@@ -468,6 +468,8 @@ char *expandd(char *buf, int len, const char *i, char sum)
             if (v && !query)
             {
                v = dollar_expand_process(d, v, &e, 0);
+               if (e)
+                  warnx("Expand: %s\n[%s]", e, i);
                if (v)
                {
                   char safe = dollar_expand_underscore(d);
@@ -506,7 +508,6 @@ char *expandd(char *buf, int len, const char *i, char sum)
                   } else
                      while (*v && o < x)
                         *o++ = *v++;    // simple expansion
-
                }
             }
          }
