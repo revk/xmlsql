@@ -25,7 +25,10 @@ update:
 	make -C stringdecimal
 
 SQLlib/sqllib.o: SQLlib/sqllib.c
-	make -C SQLlib
+	make -C SQLlib sqllib.o
+
+SQLlib/sqlexpand.o: SQLlib/sqlexpand.c
+	make -C SQLlib sqlexpand.o
 
 stringdecimal/stringdecimaleval.o: stringdecimal/stringdecimal.c
 	make -C stringdecimal
