@@ -24,8 +24,9 @@
 <p><b>It is strongly recommended that the arguments for <tt>xmlsq</tt> are not processed by the shell, e.g. for csh use <tt>&lt;&lt;&nbsp;'END'</tt> rather than <tt>END</tt>.</b></p>
 <p>In most cases the <tt>$</tt> expansion uses the rules as specified for the <tt><a href="sqlexpand.html">xmlexpand</a></tt> command. However, there are some exceptions.</p>
 <ul>
-	<li>If an attribute value starts <tt>$?<i>name</i></tt> then the whole attribute is ignored if the variable <i>name</i> does not exist.</li>
+	<li>If an attribute value starts <tt>$?<i>name</i></tt> then the whole attribute is ignored if the variable <i>name</i> does not exist. Used to make an attribute conditional.</li>
 	<li>Nested expansion is allowed, e.g. <tt>${$<i>name</i>}</tt> gets <tt>$<i>name</i></tt> and then gets a variable by that name.</li>
+	<li><tt>$@</tt> creates an ID for cache handling (timestamp of current directory)</li>
 </ul>
 <p>In the case of the tags for generating an SQL query, the operations are exactly the same as the <tt><a href="SQLlib/sqlexpand.html">xmlexpand</a></tt> command.</p>
 <h2>Special tags</h2>
