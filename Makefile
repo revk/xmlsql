@@ -10,7 +10,7 @@ SQLLIB=$(shell mariadb_config --libs)
 SQLVER=$(shell mariadb_config --version | sed 'sx\..*xx')
 endif
 
-OPTS=-D_GNU_SOURCE --std=gnu99 -g -Wall -funsigned-char -std=c99 -lpopt
+OPTS=-D_GNU_SOURCE --std=gnu99 -g -Wall -funsigned-char -lpopt
 
 all: xmlsql punycode punycode.o
 
