@@ -4259,6 +4259,9 @@ int main(int argc, const char *argv[])
    optCon = poptGetContext(NULL, argc, argv, optionsTable, 0);
    poptSetOtherOptionHelp(optCon, "<files>");
 
+   if (sqldatabase && *sqldatabase == '$')
+      sqldatabase = getenv(sqldatabase + 1);
+
    /* Now do options processing, get portname */
    if ((c = poptGetNextOpt(optCon)) < -1)
    {
