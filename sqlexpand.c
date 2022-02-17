@@ -429,7 +429,7 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
       getvar = getenv;          // Default
    if (!query)
       return NULL;              // Uh?
-   dollar_expand_t *d;
+   dollar_expand_t *d = NULL;
    const char *warn = NULL;
    char *expanded = NULL;
    char *malloced = NULL;       // For when variable is malloced
