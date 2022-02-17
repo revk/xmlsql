@@ -421,10 +421,12 @@ void dollar_expand_free(dollar_expand_t ** dd)
 }
 
 // SQL parse
-char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp, unsigned int flags)
+char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp, const char **posp, unsigned int flags)
 {
    if (errp)
       *errp = NULL;
+   if (posp)
+      *posp = NULL;
    if (!getvar)
       getvar = getenv;          // Default
    if (!query)
@@ -449,6 +451,8 @@ char *sqlexpand(const char *query, sqlexpandgetvar_t * getvar, const char **errp
    const char *p = query;
    while (*p)
    {
+      if (posp)
+         *posp = p;
       if (*p == '\\')
       {                         // Literal quote
          p++;
@@ -775,13 +779,14 @@ int main(int argc, const char *argv[])
       flags |= SQLEXPANDBLANK;
    if (!dosafe)
       flags |= SQLEXPANDUNSAFE;
-   const char *e = NULL;
-   char *expanded = sqlexpand(query, getenv, &e, flags);
+   const char *e = NULL,
+       *p = NULL;
+   char *expanded = sqlexpand(query, getenv, &e, &p, flags);
    if (!expanded)
-      errx(1, "Failed SQL expand: %s\n[%s]\n", e, query);
+      errx(1, "Failed SQL expand: %s\n[%s]\n[%s]", e, query, p);
    printf("%s", expanded);
    if (e)
-      warnx("Warning SQL expansion: %s\n[%s]\n[%s]\n", e, query, expanded);
+      warnx("Warning SQL expansion: %s\n[%s]\n[%s]\n[%s]", e, query, expanded, p);
    free(expanded);
    return 0;
 }
