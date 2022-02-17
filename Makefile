@@ -12,10 +12,10 @@ endif
 
 OPTS=-D_GNU_SOURCE --std=gnu99 -g -Wall -funsigned-char -std=c99 -lpopt
 
-all: xmlsql punycode sqlexpand punycode.o sqlexpand.o
+all: xmlsql punycode punycode.o
 
-xmlsql: xmlsql.c xmlparse.o punycode.o sqlexpand.o SQLlib/sqllib.o stringdecimal/stringdecimaleval.o Makefile sqlexpand.h punycode.h xmlparse.h
-	cc -O -o $@ $< xmlparse.o punycode.o SQLlib/sqllib.o ${OPTS} stringdecimal/stringdecimaleval.o sqlexpand.o -lcrypto -luuid -ISQLlib -Istringdecimal ${SQLINC} ${SQLLIB}
+xmlsql: xmlsql.c xmlparse.o punycode.o SQLlib/sqlexpand.o SQLlib/sqllib.o stringdecimal/stringdecimaleval.o Makefile SQLlib/sqllib.h SQLlib/sqlexpand.h punycode.h xmlparse.h
+	cc -O -o $@ $< xmlparse.o punycode.o SQLlib/sqllib.o ${OPTS} stringdecimal/stringdecimaleval.o SQLlib/sqlexpand.o -lcrypto -luuid -ISQLlib -Istringdecimal ${SQLINC} ${SQLLIB}
 
 update:
 	git submodule update --init --remote --recursive
@@ -38,9 +38,3 @@ punycode.o: punycode.c Makefile
 
 punycode: punycode.c Makefile
 	cc -O -o $@ $< ${OPTS}
-
-sqlexpand.o: sqlexpand.c Makefile
-	cc -c -o $@ $< ${OPTS} -DLIB
-
-sqlexpand: sqlexpand.c Makefile
-	cc -O -o $@ $< ${OPTS} -luuid -lcrypto
