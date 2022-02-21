@@ -2954,6 +2954,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
          char *having = getatt(x, "HAVING");
          char *group = getatt(x, "GROUP");
          char *limit = getatt(x, "LIMIT");
+         xmlattr *csv = xmlfindattr(x, "CSV");
          xmlattr *xml = xmlfindattr(x, "XML");
          xmlattr *json = xmlfindattr(x, "JSON");
          xmlattr *jsarray = xmlfindattr(x, "JSARRAY");
@@ -3138,13 +3139,47 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                   }
                   fprintf(out, "</tr>\n");
                }
-               if (xml)
+               if (csv)
+               {                // Direct CSV output
+                  void string(const char *p, char q) {  // JSON string
+                     while (*p)
+                     {
+                        if (*p >= ' ')
+                        {
+                           if ((q && *p == q) || *p == '\\')
+                              fputc('\\', out);
+                           fputc(*p, out);
+                        }
+                        p++;
+                     }
+                  }
+                  while ((row[level] = sql_fetch_row(res[level])))
+                  {
+                     for (int f = 0; f < fields[level]; f++)
+                     {
+                        char *c = row[level][f];
+                        char q = 0;
+                        if (!(field[level][f].flags & NUM_FLAG))
+                           q = '"';
+                        if (f)
+                           fputc(',', out);
+                        if (c)
+                        {
+                           if (q)
+                              fputc(q, out);
+                           string(row[level][f], q);
+                           if (q)
+                              fputc(q, out);
+                        }
+                     }
+                     fputc('\n', out);
+                  }
+               } else if (xml)
                {                // Direct XML output
                   while ((row[level] = sql_fetch_row(res[level])))
                   {
-                     int f;
                      fprintf(out, "<%s>", xml->value ? : "Row");
-                     for (f = 0; f < fields[level]; f++)
+                     for (int f = 0; f < fields[level]; f++)
                      {
                         char *c = row[level][f];
                         if (c)
@@ -3293,6 +3328,12 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                }
             } else
             {                   // command has results, and we have content to output using that
+               if (csv)
+               {
+                  sql_free_result(res[level]);
+                  warning(x, "SQL CSV - use self closing SQL tag");
+                  return x->end->next;
+               }
                if (xml)
                {
                   sql_free_result(res[level]);
