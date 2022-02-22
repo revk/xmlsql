@@ -2955,6 +2955,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
          char *group = getatt(x, "GROUP");
          char *limit = getatt(x, "LIMIT");
          xmlattr *csv = xmlfindattr(x, "CSV");
+         xmlattr *csvhead = xmlfindattr(x, "CSVHEAD");
          xmlattr *xml = xmlfindattr(x, "XML");
          xmlattr *json = xmlfindattr(x, "JSON");
          xmlattr *jsarray = xmlfindattr(x, "JSARRAY");
@@ -3103,7 +3104,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
          {                      // query done, result
             fields[level] = sql_num_fields(res[level]);
             field[level] = sql_fetch_field(res[level]);
-            void escapeout(char *c) {
+            void xmlout(char *c) {
                if (!c)
                   return;
                while (*c)
@@ -3126,33 +3127,73 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                   c++;
                }
             }
+            void csvout(const char *p, char q) {        // JSON string
+               while (*p)
+               {
+                  if (*p >= ' ')
+                  {
+                     if ((q && *p == q) || *p == '\\')
+                        fputc('\\', out);
+                     fputc(*p, out);
+                  }
+                  p++;
+               }
+            }
+            void jsonout(const char *p) {       // JSON string
+               if (!p)
+               {
+                  fprintf(out, "null");
+                  return;
+               }
+               fputc('"', out);
+               while (*p)
+               {
+                  unsigned char c = *p;
+                  if (c == '\n')
+                     fprintf(out, "\\n");
+                  else if (c == '\r')
+                     fprintf(out, "\\r");
+                  else if (c == '\t')
+                     fprintf(out, "\\t");
+                  else if (c == '\b')
+                     fprintf(out, "\\b");
+                  else if (c == '\\' || c == '"')
+                     fprintf(out, "\\%c", (char) c);
+                  else if (c < ' ')
+                     fprintf(out, "\\u%04X", c);
+                  else
+                     fputc(c, out);
+                  p++;
+               }
+               fputc('"', out);
+            }
+            if (tablehead)
+            {
+               fprintf(out, "<tr class='sqlhead'>");
+               for (int f = 0; f < fields[level]; f++)
+               {
+                  fprintf(out, "<th>");
+                  xmlout(field[level][f].name);
+                  fprintf(out, "</th>");
+               }
+               fprintf(out, "</tr>\n");
+            }
+            if (csvhead)
+            {
+               for (int f = 0; f < fields[level]; f++)
+               {
+                  if (f)
+                     fputc(',', out);
+                  fputc('"', out);
+                  csvout(field[level][f].name, '"');
+                  fputc('"', out);
+               }
+               fputc('\n', out);
+            }
             if (x->type & XML_END)
             {                   // command has results, and we have no way to format it - special cases for direct formatted output
-               if (tablehead)
-               {
-                  fprintf(out, "<tr class='sqlhead'>");
-                  for (int f = 0; f < fields[level]; f++)
-                  {
-                     fprintf(out, "<th>");
-                     escapeout(field[level][f].name);
-                     fprintf(out, "</th>");
-                  }
-                  fprintf(out, "</tr>\n");
-               }
                if (csv)
                {                // Direct CSV output
-                  void string(const char *p, char q) {  // JSON string
-                     while (*p)
-                     {
-                        if (*p >= ' ')
-                        {
-                           if ((q && *p == q) || *p == '\\')
-                              fputc('\\', out);
-                           fputc(*p, out);
-                        }
-                        p++;
-                     }
-                  }
                   while ((row[level] = sql_fetch_row(res[level])))
                   {
                      for (int f = 0; f < fields[level]; f++)
@@ -3167,7 +3208,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                         {
                            if (q)
                               fputc(q, out);
-                           string(row[level][f], q);
+                           csvout(row[level][f], q);
                            if (q)
                               fputc(q, out);
                         }
@@ -3200,7 +3241,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                               xmlwrite(out, 0, "Cell", "ss:StyleID", style, 0);
                               xmlwrite(out, 0, "Data", "ss:Type", type, "FieldName", field[level][f].name, 0);
                            }
-                           escapeout(c);
+                           xmlout(c);
                            if (xml->value)
                               fprintf(out, "</%s>", field[level][f].name);
                            else
@@ -3217,34 +3258,6 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                   }
                } else if (json || jsarray)
                {
-                  void string(const char *p) {  // JSON string
-                     if (!p)
-                     {
-                        fprintf(out, "null");
-                        return;
-                     }
-                     fputc('"', out);
-                     while (*p)
-                     {
-                        unsigned char c = *p;
-                        if (c == '\n')
-                           fprintf(out, "\\n");
-                        else if (c == '\r')
-                           fprintf(out, "\\r");
-                        else if (c == '\t')
-                           fprintf(out, "\\t");
-                        else if (c == '\b')
-                           fprintf(out, "\\b");
-                        else if (c == '\\' || c == '"')
-                           fprintf(out, "\\%c", (char) c);
-                        else if (c < ' ')
-                           fprintf(out, "\\u%04X", c);
-                        else
-                           fputc(c, out);
-                        p++;
-                     }
-                     fputc('"', out);
-                  }
                   int found = 0;
                   fprintf(out, "[");    // top level array
                   while ((row[level] = sql_fetch_row(res[level])))
@@ -3263,12 +3276,12 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                               continue;
                            if (found++)
                               fprintf(out, ",");
-                           string(field[level][f].name);
+                           jsonout(field[level][f].name);
                            fprintf(out, ":");
                            if (c && IS_NUM(field[level][f].type))
                               fprintf(out, "%s", c);
                            else
-                              string(c);
+                              jsonout(c);
                         }
                         fprintf(out, "}");
                      } else
@@ -3282,7 +3295,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                            if (c && IS_NUM(field[level][f].type))
                               fprintf(out, "%s", c);
                            else
-                              string(c);
+                              jsonout(c);
                         }
                         fprintf(out, "]");
                      }
@@ -3315,7 +3328,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                         else if (field[level][f].flags & NUM_FLAG)
                            fprintf(out, " class='sqlnum'");
                         fprintf(out, ">");
-                        escapeout(row[level][f]);
+                        xmlout(row[level][f]);
                         fprintf(out, "</td>");
                      }
                      fprintf(out, "</tr>\n");

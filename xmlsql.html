@@ -50,6 +50,7 @@
 <tr><td>DESC</td><td>(deprecated) This appends DESC to the ORDER clause, causing the last field in the order list to be descending order.</td></tr>
 <tr><td>DISTINCT</td><td>(deprecated) Query prefixed with DISTINCT.</td></tr>
 <tr><td>KEY</td><td>This specifies a key field name - the WHERE clause is constructed as <i>fieldname</i>=<i>value</i> using the current value of the specified field if not in the environment.</td></tr>
+<tr><td>CSVHEAD</td><td>Include CSV row header line.</td></tr>
 <tr><td>CSV</td><td>If specified then the &lt;sql...&gt; must be self closing. This creates an CSV style set of rows.</td></tr>
 <tr><td>XML</td><td>If specified then the &lt;sql...&gt; must be self closing. This creates an XML style set of rows, each tagged using the value given to XML. E.g. XML="row". Be careful in using select names and using "AS" to ensure valid XML tag names as this is not checked. If XML has no value (i.e. just XML not XML=) then generates Excel style table rows instead.</td></tr>
 <tr><td>JSARRAY</td><td>If specified then the &lt;sql...&gt; must be self closing. This creates a JSON array which contains arrays of the values from the query. If JSARRAY has a value, it is the name of a variable, and the entire JSON formatted output of the query is put in that variable.</td></tr>
