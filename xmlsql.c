@@ -443,16 +443,6 @@ char *expandd(char *buf, int len, const char *i, char sum)
          {
             o += sprintf(o, "%d", getppid());
             continue;
-         } else if (!strcmp(name, "@"))
-         {
-            i++;
-            struct stat s = { };
-            time_t when = 0;
-            if (!stat(".", &s))
-               when = s.st_mtime;
-            else
-               when = time(0);
-            o += sprintf(o, "%ld", when);
          } else
          {
             char query = dollar_expand_query(d);
