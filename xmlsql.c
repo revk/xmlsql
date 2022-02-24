@@ -444,6 +444,7 @@ char *expandd(char *buf, int len, const char *i, char sum)
             continue;
          } else
          {
+            //char literal = dollar_expand_literal(d); // TODO use to control safe expansion...
             char query = dollar_expand_query(d);
             char *v = getvar(name, 0);
             if (!v && query)
