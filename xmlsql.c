@@ -405,7 +405,7 @@ char *expandd(char *buf, int len, const char *i, char sum)
       if (!*p)
          return (char *) i;     // Unchanged 
    }
-   char q=0;
+   char q = 0;
    // Expand
 #ifndef  BODGEEVAL
    char *base = i;
@@ -462,12 +462,13 @@ char *expandd(char *buf, int len, const char *i, char sum)
                   char safe = dollar_expand_underscore(d);
                   char comma = dollar_expand_list(d);
                   char quote = dollar_expand_quote(d);
-		  if(q)quote=0;
-		  else if(quote)
-		  {
+                  if (q)
+                     quote = 0;
+                  else if (quote)
+                  {
                      if (o < x)
-                        *o++ = (q='"');
-		  }
+                        *o++ = (q = '"');
+                  }
                   if (safe)
                   {
                      while (*v && o < x)
@@ -483,27 +484,27 @@ char *expandd(char *buf, int len, const char *i, char sum)
                   {
                      while (*v && o < x)
                      {
-                        if (comma && (*v == '\t' || *v == ',') && o < x)
-                           *o++ = (q ? : '"');      // List expansion
-                        if (*v == q && o < x)
+                        if (q && comma && (*v == '\t' || *v == ',') && o < x)
+                           *o++ = '"';  // List expansion
+                        if (q && *v == q && o < x)
                            *o++ = '\\';
                         if (comma && (*v == '\t' || *v == ',') && o < x)
                            *o++ = ',';
                         else if (o < x)
                            *o++ = *v;
-                        if (comma && (*v == '\t' || *v == ',') && o < x)
-                           *o++ = (q ? : '"');      // List expansion
+                        if (q && comma && (*v == '\t' || *v == ',') && o < x)
+                           *o++ = '"';  // List expansion
                         v++;
                      }
                   } else
                      while (*v && o < x)
                         *o++ = *v++;    // simple expansion
-		  if(quote)
-		  {
-			  f (o < x)
-                          *o++ = q;
-			  q=0;
-		  }
+                  if (quote)
+                  {
+                     if (o < x)
+                        *o++ = q;
+                     q = 0;
+                  }
                }
             }
          }
