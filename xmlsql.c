@@ -460,7 +460,7 @@ char *expandd(char *buf, int len, const char *i, char sum)
                if (v)
                {
                   char safe = dollar_expand_underscore(d);
-                  char comma = dollar_expand_list(d);
+                  char list = dollar_expand_list(d);
                   char quote = dollar_expand_quote(d);
                   if (q)
                      quote = 0;
@@ -480,20 +480,25 @@ char *expandd(char *buf, int len, const char *i, char sum)
                         o++;
                         v++;
                      }
-                  } else if (q || comma)
+                  } else if (q)
                   {
                      while (*v && o < x)
                      {
-                        if (q && comma && (*v == '\t' || *v == ',') && o < x)
-                           *o++ = '"';  // List expansion
-                        if (q && *v == q && o < x)
-                           *o++ = '\\';
-                        if (comma && (*v == '\t' || *v == ',') && o < x)
-                           *o++ = ',';
-                        else if (o < x)
-                           *o++ = *v;
-                        if (q && comma && (*v == '\t' || *v == ',') && o < x)
-                           *o++ = '"';  // List expansion
+                        if (list && (*v == '\t' || *v == ','))
+                        {       // List comma
+                           if (q && o < x)
+                              *o++ = q;
+                           if (o < x)
+                              *o++ = ',';
+                           if (q && o < x)
+                              *o++ = q;
+                        } else
+                        {
+                           if (q && *v == q && o < x)
+                              *o++ = *v;
+                           if (o < x)
+                              *o++ = *v;
+                        }
                         v++;
                      }
                   } else
@@ -517,7 +522,7 @@ char *expandd(char *buf, int len, const char *i, char sum)
       {
          if (q && *i == q)
             q = 0;
-         else if (*i == '\'' || *i == '"')
+         else if (*i == '\'' || *i == '"' || *i == '`')
             q = *i;
          *o++ = *i++;
       }
