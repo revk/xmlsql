@@ -405,16 +405,13 @@ char *expandd(char *buf, int len, const char *i, char sum)
       if (!*p)
          return (char *) i;     // Unchanged 
    }
+   char q=0;
    // Expand
-   char quote = 0,
-       query = 0;;
 #ifndef  BODGEEVAL
    char *base = i;
 #endif
    while (*i && o < x)
    {
-      if (*i == '?')
-         query++;
       if ((*i == '$' && i[1] && i[1] != '(' && !isspace(i[1]))  // Note $( is jquery crap so we ignore and use in text
 #ifndef  BODGEEVAL
           || (sum && isalpha(*i) && (i == base || !isalnum(i[-1])))
@@ -464,6 +461,13 @@ char *expandd(char *buf, int len, const char *i, char sum)
                {
                   char safe = dollar_expand_underscore(d);
                   char comma = dollar_expand_list(d);
+                  char quote = dollar_expand_quote(d);
+		  if(q)quote=0;
+		  else if(quote)
+		  {
+                     if (o < x)
+                        *o++ = (q='"');
+		  }
                   if (safe)
                   {
                      while (*v && o < x)
@@ -475,29 +479,31 @@ char *expandd(char *buf, int len, const char *i, char sum)
                         o++;
                         v++;
                      }
-                  } else if (quote || comma)
+                  } else if (q || comma)
                   {
-                     if (comma && !quote && o < x)
-                        *o++ = '"';     // List expansion
                      while (*v && o < x)
                      {
                         if (comma && (*v == '\t' || *v == ',') && o < x)
-                           *o++ = (quote ? : '"');      // List expansion
-                        if (*v == quote && o < x)
+                           *o++ = (q ? : '"');      // List expansion
+                        if (*v == q && o < x)
                            *o++ = '\\';
                         if (comma && (*v == '\t' || *v == ',') && o < x)
                            *o++ = ',';
                         else if (o < x)
                            *o++ = *v;
                         if (comma && (*v == '\t' || *v == ',') && o < x)
-                           *o++ = (quote ? : '"');      // List expansion
+                           *o++ = (q ? : '"');      // List expansion
                         v++;
                      }
-                     if (comma && !quote && o < x)
-                        *o++ = '"';     // List expansion
                   } else
                      while (*v && o < x)
                         *o++ = *v++;    // simple expansion
+		  if(quote)
+		  {
+			  f (o < x)
+                          *o++ = q;
+			  q=0;
+		  }
                }
             }
          }
@@ -508,10 +514,10 @@ char *expandd(char *buf, int len, const char *i, char sum)
          *o++ = *i++;
       } else                    // normal character
       {
-         if (quote && *i == quote)
-            quote = 0;
+         if (q && *i == q)
+            q = 0;
          else if (*i == '\'' || *i == '"')
-            quote = *i;
+            q = *i;
          *o++ = *i++;
       }
    }
