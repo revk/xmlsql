@@ -3841,7 +3841,7 @@ xmltoken *doinclude(xmltoken * x, process_t * state, char *value)
       }
    } else if ((a = xmlfindattr(x, "VAR")) && a->value)
    {                            // Include a variable directly
-      value = getenv(a->value);
+      value = getvar(a->value,NULL);
       xmltoken *i = xmlparse((char *) value, a->value);
       if (i)
       {                         // included

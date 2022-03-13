@@ -168,7 +168,7 @@
 </fieldset>
 <h2>INCLUDE</h2>
 <p>Takes one attribute <tt>src=</tt> specifying a filename to include at this point. File is only loaded once even if in a loop and not loaded at all if conditional and not processed. Balancing of statements is internal to each file.</p>
-<p>Can alternatively take <tt>var=</tt> and variable name to simply include the content of that environment variable at this point.</p>
+<p>Can alternatively take <tt>var=</tt> and variable name to simply include the content of that variable at this point. Note this is only done once, so uses the variable as first seen even in a loop.</p>
 <h4>EXEC</h4>
 <p>If --exec specified then EXEC can be used. It has <tt>cmd=</tt> as first argument and <tt>arg=</tt> as subsequent arguments that are the command to run and the args to pass to it. Output from the command is placed directly in the output with no processing. e.g. <tt>&lt;EXEC cmd="/bin/echo" arg="hello" arg="$var" /&gt;</tt>. If not cmd= or arg= then assumed to be an argument as is.</p>
 <p>Before the <tt>cmd=</tt> you can include as a first attribute <tt>include</tt>. If present the output of the exec is included at this point (and not re-run if in a loop), so processed as part of the script, otherwise it is simply output at this point.</p>
