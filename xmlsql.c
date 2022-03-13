@@ -3845,6 +3845,7 @@ xmltoken *doinclude(xmltoken * x, process_t * state, char *value)
       if (value)
       {
          value = strdup(value);
+	 // Not freed as used as part of the parsed strings
          xmltoken *i = xmlparse((char *) value, a->value);
          if (i)
          {                      // included
@@ -3854,7 +3855,6 @@ xmltoken *doinclude(xmltoken * x, process_t * state, char *value)
                i = (i->end && i->end != i ? i->end : i->next);
             i->next = l;
          }
-	 free(value);
       }
    }
    x->attrs = 0;                // Don't re-run
