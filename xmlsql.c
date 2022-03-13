@@ -3841,15 +3841,19 @@ xmltoken *doinclude(xmltoken * x, process_t * state, char *value)
       }
    } else if ((a = xmlfindattr(x, "VAR")) && a->value)
    {                            // Include a variable directly
-      value = getvar(a->value,NULL);
-      xmltoken *i = xmlparse((char *) value, a->value);
-      if (i)
-      {                         // included
-         xmltoken *l = x->next;
-         x->next = i;
-         while (i && i->next)
-            i = (i->end && i->end != i ? i->end : i->next);
-         i->next = l;
+      value = getvar(a->value, NULL);
+      if (value)
+      {
+         value = strdupa(value);
+         xmltoken *i = xmlparse((char *) value, a->value);
+         if (i)
+         {                      // included
+            xmltoken *l = x->next;
+            x->next = i;
+            while (i && i->next)
+               i = (i->end && i->end != i ? i->end : i->next);
+            i->next = l;
+         }
       }
    }
    x->attrs = 0;                // Don't re-run
