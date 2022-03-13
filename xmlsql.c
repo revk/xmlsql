@@ -3844,7 +3844,7 @@ xmltoken *doinclude(xmltoken * x, process_t * state, char *value)
       value = getvar(a->value, NULL);
       if (value)
       {
-         value = strdupa(value);
+         value = strdup(value);
          xmltoken *i = xmlparse((char *) value, a->value);
          if (i)
          {                      // included
@@ -3854,6 +3854,7 @@ xmltoken *doinclude(xmltoken * x, process_t * state, char *value)
                i = (i->end && i->end != i ? i->end : i->next);
             i->next = l;
          }
+	 free(value);
       }
    }
    x->attrs = 0;                // Don't re-run
