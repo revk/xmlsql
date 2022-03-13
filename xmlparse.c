@@ -144,7 +144,7 @@ xmltoken *xmlparse(char *h, char *filename)
                         if (val)
                         {
                            hwas = h;
-                           h = strdupa(val);
+                           h = strdup(val); // Not freeed, I know
                         }
                         continue;
                      }
