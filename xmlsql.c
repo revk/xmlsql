@@ -563,11 +563,13 @@ static void xputc(unsigned char c, FILE * f, int flags)
       else if (c == '\\')
          fprintf(f, "%s", "\\\\");
       else if (c == '\r')
-         fprintf(f, "%s", "\\\\r");
+         fprintf(f, "%s", "\\r");
       else if (c == '\n')
-         fprintf(f, "%s", "\\\\n");
+         fprintf(f, "%s", "\\n");
       else if (c == '\t')
-         fprintf(f, "%s", "\\\\t");
+         fprintf(f, "%s", "\\t");
+      else if (c == '/')
+         fprintf(f, "%s", "\\/");
       else
          fputc(c, f);
    }
@@ -2980,7 +2982,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                      fprintf(out, "\\t");
                   else if (c == '\b')
                      fprintf(out, "\\b");
-                  else if (c == '\\' || c == '"')
+                  else if (c == '\\' || c == '"' || c == '/')   // Note escaping / is optional but done to avoid </script> issues
                      fprintf(out, "\\%c", (char) c);
                   else if (c < ' ')
                      fprintf(out, "\\u%04X", c);
@@ -3845,7 +3847,7 @@ xmltoken *doinclude(xmltoken * x, process_t * state, char *value)
       if (value)
       {
          value = strdup(value);
-	 // Not freed as used as part of the parsed strings
+         // Not freed as used as part of the parsed strings
          xmltoken *i = xmlparse((char *) value, a->value);
          if (i)
          {                      // included
