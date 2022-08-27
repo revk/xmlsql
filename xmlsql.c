@@ -389,7 +389,7 @@ char *expandd(char *buf, int len, const char *i, char sum)
       const char *p = i;
       while (*p)
       {
-         if (*p == '$'
+         if ((*p == '$' && (isalpha(p[1]) || strchr(SQLEXPANDPREFIX, p[1])))
 #ifndef  BODGEEVAL
              || (sum && isalpha(*p) && (p == i || !isalnum(p[-1])))
 #endif
@@ -412,7 +412,7 @@ char *expandd(char *buf, int len, const char *i, char sum)
 #endif
    while (*i && o < x)
    {
-      if ((*i == '$' && i[1] && i[1] != '(' && !isspace(i[1]))  // Note $( is jquery crap so we ignore and use in text
+      if ((*i == '$' && (isalpha(i[1]) || strchr(SQLEXPANDPREFIX, i[1])))
 #ifndef  BODGEEVAL
           || (sum && isalpha(*i) && (i == base || !isalnum(i[-1])))
 #endif
