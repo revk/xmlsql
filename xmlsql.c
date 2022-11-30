@@ -3548,6 +3548,7 @@ xmltoken *doscript(xmltoken * x, process_t * state)
 
 xmltoken *doimg(xmltoken * x, process_t * state)
 {
+   char tempatt[MAXTEMP];
    char *alt = getatt(x, "alt");
    if (!alt)
       alt = getatt(x, "title");
@@ -3558,16 +3559,15 @@ xmltoken *doimg(xmltoken * x, process_t * state)
    char *file = getatt(x, "base64");
    if (!file)
    {                            // Not interested
-      tagwrite(of, x, "base64", XMLATTREMOVE, "alt", alt, (void *) 0);
+      tagwrite(of, x, "base64", XMLATTREMOVE, "alt", expand(tempatt, sizeof(tempatt), alt), (void *) 0);
       return x->next;
    }
-   char tempatt[MAXTEMP];
    char *ta = expand(tempatt, sizeof(tempatt), file);
    int f = open(ta, O_RDONLY);
    if (f < 0)
    {
       fprintf(stderr, "Unable to open file %s\n", ta);
-      tagwrite(of, x, "base64", XMLATTREMOVE, "alt", alt, (void *) 0);
+      tagwrite(of, x, "base64", XMLATTREMOVE, "alt", expand(tempatt, sizeof(tempatt), alt), (void *) 0);
       return x->next;
    }
    const char *type = NULL;
@@ -3594,7 +3594,7 @@ xmltoken *doimg(xmltoken * x, process_t * state)
          fprintf(stderr, "Unknown file type for %s (%d)\n", ta, (int) l);
       else
          fprintf(stderr, "Unknown file type for %s (%02X%02X%02X%02X)\n", ta, magic[0], magic[1], magic[2], magic[3]);
-      tagwrite(of, x, "base64", XMLATTREMOVE, "alt", alt, (void *) 0);
+      tagwrite(of, x, "base64", XMLATTREMOVE, "alt", expand(tempatt, sizeof(tempatt), alt), (void *) 0);
       return x->next;
    }
    fprintf(of, "<img");
