@@ -1201,7 +1201,7 @@ void writeoutput(xmltoken * x, char *v, char *e, int hasreplace, int flags, int 
          {
             if (maxsize)
                fprintf(of, " ");
-            else if (flags & FLAG_TEXTAREA)
+            else if ((flags & FLAG_TEXTAREA) || isxml)
                fputc('\n', of);
             else
                xputs("<br />", of, flags);
