@@ -3524,51 +3524,51 @@ xmltoken *doscript(xmltoken * x, process_t * state)
                fprintf(of, "%s:", n);
             else
                fprintf(of, "var %s=", n);
-            if (!v)
+            size_t l = 0;
+            if (v)
             {
-               v = "undefined";
-               raw = 1;
-               file = 0;
-            }
-            size_t l = strlen(v);
-            if (file)
-            {
-               if (!strncmp(v, "/etc/", 5))
+               l = strlen(v);
+               if (l && file)
                {
-                  warnx("Nice try %s", v);
-                  l = strlen(v = "nicetry");
-                  file = 0;
-               } else
-               {
-                  int fd = open(v, O_RDONLY);
-                  if (fd < 0)
+                  if (!strncmp(v, "/etc/", 5))
                   {
-                     warn("Open failed %s", v);
-                     l = strlen(v = "notfound");
-                     file = 0;
+                     warnx("Nice try %s", v);
+                     v = NULL;
                   } else
                   {
-                     struct stat s;
-                     if (fstat(fd, &s))
+                     int fd = open(v, O_RDONLY);
+                     if (fd < 0)
                      {
-                        warn("Stat failed %s", v);
-                        l = strlen(v = "cannotstat");
-                        file = 0;
+                        warn("Open failed %s", v);
+                        v = NULL;
                      } else
                      {
-                        l = s.st_size;
-                        void *a = mmap(NULL, l, PROT_READ, MAP_SHARED, fd, 0);
-                        if (a == MAP_FAILED)
+                        struct stat s;
+                        if (fstat(fd, &s))
                         {
-                           warn("Map failed %s", v);
-                           l = strlen(v = "cannotmap");
-                           file = 0;
+                           warn("Stat failed %s", v);
+                           v = NULL;
                         } else
-                           v = a;
+                        {
+                           l = s.st_size;
+                           void *a = mmap(NULL, l, PROT_READ, MAP_SHARED, fd, 0);
+                           if (a == MAP_FAILED)
+                           {
+                              warn("Map failed %s", v);
+                              v = NULL;
+                           } else
+                              v = a;
+                        }
+                        close(fd);
                      }
-                     close(fd);
                   }
                }
+            }
+            if (!v)
+            {
+               l = strlen(v = "undefined");
+               raw = 1;
+               file = 0;
             }
             if (raw)
                fprintf(of, "%.*s", (int) l, v);
