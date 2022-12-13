@@ -3525,7 +3525,10 @@ xmltoken *doscript(xmltoken * x, process_t * state)
             else
                fprintf(of, "var %s=", n);
             if (!v)
+            {
                v = "undefined";
+               raw = 1;
+            }
             size_t l = strlen(v);
             if (file)
             {
