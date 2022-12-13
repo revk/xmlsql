@@ -3531,7 +3531,8 @@ xmltoken *doscript(xmltoken * x, process_t * state)
             {
                if (!strncmp(v, "/etc/", 5))
                {
-                  l = strlen(v = "notfound");
+                  warnx("Nice try %s", v);
+                  l = strlen(v = "nicetry");
                   file = 0;
                } else
                {
