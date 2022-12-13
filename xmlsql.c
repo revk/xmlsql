@@ -3528,6 +3528,7 @@ xmltoken *doscript(xmltoken * x, process_t * state)
             {
                v = "undefined";
                raw = 1;
+               file = 0;
             }
             size_t l = strlen(v);
             if (file)
