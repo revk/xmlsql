@@ -209,7 +209,8 @@
 <h2>SCRIPT</h2>
 <p>The &lt;SCRIPT...&gt; tag can include <i>var=name</i> one or more times which causes <tt>var name='<i>value</i>';</tt> to be added to the start of the script content. The special case <i>var=*</i> causes all columns in the current &lt;SQL...&gt; query to be output.</p>
 <p>You can include <i>object=name</i> which creates a single new var called <i>name</i> with all of the listed vars within it rather than as separate var declarations. This is recommended as it avoids creating unnecessary global variables in javascript.</p> 
-<p>The name of the variable can also start with a *, e.g. <i>var=*name</i> to indicate the value is to be output <i>raw</i> unquoted, this is mainly where an SQL query set the value of the variable using <i>JSON</i> or <i>JSARRAY</i>.</p>
+<p>The name of the variable can also be prefixed with a *, e.g. <i>var=*name</i> to indicate the value is to be output <i>raw</i> unquoted, this is mainly where an SQL query set the value of the variable using <i>JSON</i> or <i>JSARRAY</i>. Bear in mind if the values is not valid JSON you could execute any script, etc, from the variable (or file if used with @) in javascript.</p>
+<p>The name of the variable can also be prefixed with an @, e.g. <i>var=@name</i> to indicate the value is the content of a file which is in name. You can use @ and *. This is risky as the variable could be any file name on the system.</p>
 <h2>IMG</h2>
 <p>An <tt>img</tt> tag with attribute <tt>base64=</tt> and a filename will check the file exists and confirm if it looks like a PNG, GIF, or JPEG file. If so, it will create a <tt>src=</tt> with base64 data URI encoded content of the file. Any existing <tt>src=</tt> is stripped. If the file cannot be recognised then the <tt>img</tt> is output anyway, thus allowing <tt>src=</tt> to be used as a fallback.</p>
 <h2>MARKUP format</h2>

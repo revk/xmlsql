@@ -24,6 +24,7 @@
 #include "punycode.h"
 #include "sqlexpand.h"
 #include <stringdecimaleval.h>
+#include <sys/mman.h>
 
 const char BASE64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -3503,9 +3504,15 @@ xmltoken *doscript(xmltoken * x, process_t * state)
             continue;
          }
          int raw = 0;
-         if (*n == '*')
+         int file = 0;
+         while (*n)
          {
-            raw = 1;
+            if (*n == '*')
+               raw++;
+            else if (*n == '@')
+               file++;
+            else
+               break;
             n++;
          }
          char *v = getvar(n, 0);
@@ -3518,14 +3525,54 @@ xmltoken *doscript(xmltoken * x, process_t * state)
             else
                fprintf(of, "var %s=", n);
             if (!v)
-               fprintf(of, "undefined");
-            else if (raw)
-               fprintf(of, "%s", v);
+               v = "undefined";
+            size_t l = strlen(v);
+            if (file)
+            {
+               if (!strncmp(v, "/etc/", 5))
+               {
+                  l = strlen(v = "notfound");
+                  file = 0;
+               } else
+               {
+                  int fd = open(v, O_RDONLY);
+                  if (fd < 0)
+                  {
+                     warn("Open failed %s", v);
+                     l = strlen(v = "notfound");
+                     file = 0;
+                  } else
+                  {
+                     struct stat s;
+                     if (fstat(fd, &s))
+                     {
+                        warn("Stat failed %s", v);
+                        l = strlen(v = "cannotstat");
+                        file = 0;
+                     } else
+                     {
+                        l = s.st_size;
+                        void *a = mmap(NULL, l, PROT_READ, MAP_SHARED, fd, 0);
+                        if (a == MAP_FAILED)
+                        {
+                           warn("Map failed %s", v);
+                           l = strlen(v = "cannotmap");
+                           file = 0;
+                        } else
+                           v = a;
+                     }
+                     close(fd);
+                  }
+               }
+            }
+            if (raw)
+               fprintf(of, "%.*s", (int) l, v);
             else
             {
                fprintf(of, "'");
-               char *p = v;
-               while (*p)
+               char *p = v,
+                   *e = v + l;
+               while (p < e)
                {
                   if (*p == '\n')
                      fprintf(of, "\\n");
@@ -3539,6 +3586,8 @@ xmltoken *doscript(xmltoken * x, process_t * state)
             }
             if (!object)
                fprintf(of, ";");
+            if (file)
+               munmap(v, l);
          }
       }
    if (object)
