@@ -440,6 +440,15 @@ char *expandd(char *buf, int len, const char *i, char sum)
          {
             o += sprintf(o, "%d", getppid());
             continue;
+         } else if (!name[1] && *name == '@')
+         {                      // Cache feature id
+            struct stat s = { };
+            time_t when = 0;
+            if (!stat(".", &s))
+               when = s.st_mtime;
+            else
+               when = time(0);
+            o += sprintf(o, "%ld", when);
          } else
          {
             //char literal = dollar_expand_literal(d); // TODO use to control safe expansion...
