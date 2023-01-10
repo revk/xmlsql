@@ -1869,7 +1869,7 @@ xmltoken *dooutput(xmltoken * x, process_t * state)
                printf("%s", expand(tempval, sizeof(tempval), blank));
          } else
          {
-            const char *frac[] = { "", "&frac14;", "&frac12;", "&frac34;" };
+            const char *frac[] = { "", "¼", "½", "¾" };
             if (when > now)
             {
                time_t temp = when;
