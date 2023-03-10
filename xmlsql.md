@@ -199,62 +199,66 @@ Note that a type can be prefixed with `+` or `-`. If prefixed `-` then output is
 
 In addition to data types, there is a control for the formatting of the output, using `FORMAT=`.
 
-FORMAT values
-PS	Escape suitable for postscript use (\ in front of ( or ) or \).
-JSON	Patial Escapeing suitable for JSON.
-RAW	Show with no escaping at all - this is not recommended for anything that could be sourced externally as it allows insertion attacks. In most cases SAFE is appropriate.
-SAFE	Allow any properly balanced markup except <script> and attributes starting on which are generally javascript. SAFEMARKUP combines with MARKUP expanding www. prefix, smilies, etc. as well.
-MARKUP	Output allowing specific HTML markup (see below)
-TEXTAREA	Output for use in a text area (e.g. newlines as newlines no breaks)
-Note, for backwards compatibility these can be used as TYPE= where there is no change to content just formatting requirements.
+|Formats|Meaning|
+|-------|-------|
+|`PS`|		Escape suitable for postscript use (`\` in front of `(` or `)` or `\`).|
+|`JSON`|	Partial escaping suitable for JSON.|
+|`RAW`|		Show with no escaping at all - this is not recommended for anything that could be sourced externally as it allows insertion attacks. In most cases `SAFE` is appropriate.|
+|`SAFE`|	Allow any properly balanced markup except `<script>` and attributes starting on which are generally javascript. `SAFEMARKUP` combines with `MARKUP` expanding `www.` prefix, smilies, etc. as well.|
+|`MARKUP`|	Output allowing specific HTML markup (see below)|
+|`TEXTAREA`|	Output for use in a text area (e.g. newlines as newlines no breaks)|
 
-INCLUDE
+Note, for backwards compatibility these can be used as `TYPE=` where there is no change to content just formatting requirements.
 
-Takes one attribute src= specifying a filename to include at this point. File is only loaded once even if in a loop and not loaded at all if conditional and not processed. Balancing of statements is internal to each file.
+## INCLUDE
 
-Can alternatively take var= and variable name to simply include the content of that variable at this point. Note this is only done once, so uses the variable as first seen even in a loop.
+Takes one attribute `src=` specifying a filename to include at this point. File is only loaded once even if in a loop and not loaded at all if conditional and not processed. Balancing of statements is internal to each file.
 
-EXEC
+Can alternatively take `var=` and variable name to simply include the content of that variable at this point. Note this is only done once, so uses the variable as first seen even in a loop.
 
-If --exec specified then EXEC can be used. It has cmd= as first argument and arg= as subsequent arguments that are the command to run and the args to pass to it. Output from the command is placed directly in the output with no processing. e.g. <EXEC cmd="/bin/echo" arg="hello" arg="$var" />. If not cmd= or arg= then assumed to be an argument as is.
+## EXEC
 
-Before the cmd= you can include as a first attribute include. If present the output of the exec is included at this point (and not re-run if in a loop), so processed as part of the script, otherwise it is simply output at this point.
+If `--exec` specified then `EXEC` can be used. It has `cmd=` as first argument and `arg=` as subsequent arguments that are the command to run and the args to pass to it. Output from the command is placed directly in the output with no processing. e.g. `<EXEC cmd="/bin/echo" arg="hello" arg="$var" />`. If no `cmd=` or `arg=` then assumed to be an argument as is.
 
-LATER
+Before the `cmd=` you can include as a first attribute `INCLUDE`. If present the output of the exec is included at this point (and not re-run if in a loop), so processed as part of the script, otherwise it is simply output at this point.
 
-This is deprecated and my be withdrawn. It was needed for envhtml when nested SQL was not possible.
+## LATER
 
-The <LATER> tag is removed, then all content to the corresponding </LATER> output with no changes and no variable expansion in attributes. The </LATER> is removed. This allows a section of the input to be enclosed within <LATER>...</LATER> tags so that the output can be run through `xmlsql` again a second time. The <LATER> tags can, of course, be nested.
+This is deprecated and my be withdrawn. It was needed for `envhtml` when nested SQL was not possible, so is *deprecated* now.
 
-IF
+The `<LATER>` tag is removed, then all content to the corresponding `</LATER>` output with no changes and no variable expansion in attributes. The `</LATER>` is removed. This allows a section of the input to be enclosed within `<LATER>...</LATER>` tags so that the output can be run through `xmlsql` again a second time. The `<LATER>` tags can, of course, be nested.
 
-The <IF...> tag is used to allow control of what is output and what is not. Each attribute in the <IF...> tag is considered, and if the result is true then the content between <IF...> and corresponding </IF> are processed as normal. If not true then the content between <IF...> and corresponding </IF> are not processed or displayed.
+## IF
 
-To work out if an IF tag is true or false, each attribute is considered in turn. Other than NOT, AND and OR, the attribute is considered to be a test. If the test is true, then the next attribute is considered. If the test is false then attributes are skipped up to and past the next OR attribute. If no OR is found then the IF is considered false. Finding an OR after a true test means the whole IF is considered true and no more attributes need be checked.
+The `<IF...>` tag is used to allow control of what is output and what is not. Each attribute in the `<IF...>` tag is considered, and if the result is true then the content between `<IF...>` and corresponding `</IF>` are processed as normal. If not true then the content between `<IF...>` and corresponding `</IF>` are not processed or displayed.
 
-IF attributes
-name	True if the variable exists.
-name=0	True of the variable specified by the name has a zero value, including 0000-00-00, 0000-00-00 00:00:00, 000000000000000, 0.00, etc. A blank string is also matched.
-name=value	True of the variable specified by the name has the value. Note that this is a textual comparison and no evaluation is done on value other than normal variable expansion.
-name=+value	True if the value of the name variable is alphabetically the same or after the value. Note this is a purely textual comparison.
-name=-value	True if the value of the name variable is alphabetically the same or before the value. Note this is a purely textual comparison.
-name=*value	True if the value of the name variable is the same or a substring of the value, or if the value is not an empty string, if the value is a substring of the value of the name variable.
-name==value	True if the numeric value of the name variable is the same as the numeric value of the value.
-name=#+value	True if the numeric value of the name variable is the same or greater than the numeric value of the value..
-name=#-value	True if the numeric value of the name variable is the same or less than the numeric value of the value.
-name=&value	True if the numeric value of the name variable has bits in common with the numeric value of the value (binary AND).
-NOT	Means the truth of the next attribute is inverted.
-AND	Does nothing - attributes next to each other are implicitely AND'd
-OR	A false attribute skips to (and past) the next OR. But if an OR is reached with the previous attribute having been true then the IF as a whole is considered to be true.
-EXISTS="filename"	Is true if the file exists and can be read
-ELSE	Is true if the previous IF processed was considered false and its content skipped. Usually used simply as <IF ELSE>
-NOT cannot be used in front of NOT, AND, OR or at the end. It is valid in front of ELSE, e.g. <IF...>A</IF>B<IF NOT ELSE>C</IF> would either produce B or ABC depending on the initial IF condition. Normally ELSE is used for an alternative, e.g. <IF...>A</IF><IF ELSE>B</IF> would produce A or B depending on the initial IF condition.
+To work out if an `IF` tag is true or false, each attribute is considered in turn. Other than `NOT`, `AND` and `OR`, the attribute is considered to be a test. If the test is true, then the next attribute is considered. If the test is false then attributes are skipped up to and past the next `OR` attribute. If no `OR` is found then the `IF` is considered false. Finding an `OR` after a true test means the whole `IF` is considered true and no more attributes need be checked.
 
-WHILE
+|Attribute|Meaning|
+|---------|-------|
+|`name`|	True if the variable exists.|
+|`name=0`|	True of the variable specified by the name has a zero value, including `0000-00-00`, `0000-00-00 00:00:00`, `000000000000000`, `0.00`, etc. A *blank* string is also matched.|
+|`name=value`|	True of the variable specified by the name has the value. Note that this is a textual comparison and no evaluation is done on value other than normal variable expansion.|
+|`name=+value`|	True if the value of the name variable is alphabetically the same or after the value. Note this is a purely textual comparison.|
+|`name=-value`|	True if the value of the name variable is alphabetically the same or before the value. Note this is a purely textual comparison.|
+|`name=*value`|	True if the value of the name variable is the same or a substring of the value, or if the value is not an empty string, if the value is a substring of the value of the name variable.|
+|`name==value`|	True if the numeric value of the name variable is the same as the numeric value of the value.|
+|`name=#+value`|	True if the numeric value of the name variable is the same or greater than the numeric value of the value..|
+|`name=#-value`|	True if the numeric value of the name variable is the same or less than the numeric value of the value.|
+|`name=&value`|	True if the numeric value of the name variable has bits in common with the numeric value of the value (binary `AND`).|
+|`NOT`|		Means the truth of the next attribute is inverted.|
+|`AND`|		Does nothing - attributes next to each other are implicitly `AND`'d|
+|`OR`|		A false attribute skips to (and past) the next `OR`. But if an `OR` is reached with the previous attribute having been true then the `IF` as a whole is considered to be true.|
+|`EXISTS="filename"`|	Is true if the file exists and can be read|
+|`ELSE`|	Is true if the previous IF processed was considered false and its content skipped. Usually used simply as `<IF ELSE>`|
 
-The <WHILE...> tag works the same way as if, except that if the condition is true, after processing the contents up to the corresponding </WHILE> the condition is evaluated again. Only when it is false does processing continue after the </WHILE>. This is typically used with EVAL to create a loop, though for simple loops FOR can be used.
+Note: `NOT` cannot be used in front of `NOT`, `AND`, `OR` or at the end. It is valid in front of `ELSE`, e.g. `<IF...>A</IF>B<IF NOT ELSE>C</IF>` would either produce `B` or `ABC` depending on the initial `IF` condition. Normally `ELSE` is used for an alternative, e.g. `<IF...>A</IF><IF ELSE>B</IF>` would produce `A` or `B` depending on the initial `IF` condition.
 
-FOR
+## WHILE
+
+The `<WHILE...>` tag works the same way as if, except that if the condition is true, after processing the contents up to the corresponding `</WHILE>` the condition is evaluated again. Only when it is false does processing continue after the `</WHILE>`. This is typically used with `EVAL` to create a loop, though for simple loops `FOR` can be used.
+
+## FOR
 
 The <FOR...> tag has one or more attributes name=value, and iterates the contents of the <FOR>...</FOR> setting the named environment variable each time. The variable is set to each word in the value. The words are spaces by TAB usually, but if the attribute TAB, HASH, SPACE, NL, or LF are included before name=value then they change the delimiter. E.g. <FOR SPACE A="1 2 3">[<output name=A>]</FOR> will output [1][2][3].
 
@@ -262,13 +266,13 @@ There is also a special case for use of <FOR>...</FOR> for simple loops. Where t
 
 It is also possible to loop time/dates using DAY, MONTH, YEAR, WEEK, HOUR, MINUTE, or SECOND as a tag before the name=value. This expects two words in the value that are ISO date/time format and will iterate up from one to the other in the interval specified.
 
-DIR
+## DIR
 
 Directory listing. With no PATH set this is directory listing of current directory. If PATH is a name of a directory, then that is listed, otherwise PATH is expanded as normal shell glob to a list of files and they are processed.
 
 For each file, the variables are set for FILENAME, FILELEAF, FILEEXT, FILESIZE, FILETYPE, FILEMODE, FILEMTIME, FILECTIME, FILEATIME, and the enclosed XML processed. Normally a directory list ignores files starting with a dot, but including ALL includes these.
 
-SCRIPT
+## SCRIPT
 
 The <SCRIPT...> tag can include var=name one or more times which causes var name='value'; to be added to the start of the script content. The special case var=* causes all columns in the current <SQL...> query to be output.
 
