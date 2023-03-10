@@ -57,6 +57,7 @@ The `<SQL...>` tag is used to start an SQL query. You must have a corresponding 
 **Important**: You need to use back quotes around field names or table names where they may be a reserved word in SQL. As later versions of SQL can make new reserved words it is recommended that back quoting is always used. Be careful using backquotes from shell stdin using `<<` though as the shell gives these meaning.
 
 ### SQL attributes
+
 |Attribute|Meaning|
 |---------|-------|
 |`TABLE`|	This defined the table to be used and is placed after the `FROM` keyword in the query.|
@@ -81,47 +82,51 @@ The `<SQL...>` tag is used to start an SQL query. You must have a corresponding 
 
 ### Special cases:-
 
-The use of QUERY="..." to perform an operation that has no result (e.g. a CREATE TEMPORARY TABLE... command) should be used in the form <SQL QUERY="..." /> (i.e., with no content). If content is included it would never be used, so this is reported as an error.
-If the query has a result, even zero rows of result, then the <SQL... /> format must not be used as the results of the query would have no output. Again, this is reported as an error.
-If the ID="..." attribute is used, and the field name specified in ID is not defined, then one row is shown with SQL default values (typically as a blank input form).
-All date and datetime values retrieved from the database that are zero are retrieved as a blank string and not the normal 0000-00-00, etc.
-SET
+- The use of `QUERY="..."` to perform an operation that has no result (e.g. a `CREATE TEMPORARY TABLE...` command) should be used in the form `<SQL QUERY="..." />` (i.e., with no content). If content is included it would never be used, so this is reported as an error.
+- If the query has a result, even zero rows of result, then the `<SQL... />` format must not be used as the results of the query would have no output. Again, this is reported as an error.
+- If the `ID="..."` attribute is used, and the field name specified in `ID` is not defined, then one row is shown with SQL default values (typically as a blank input form).
+- All date and datetime values retrieved from the database that are zero are retrieved as a blank string and not the normal `0000-00-00`, etc.
 
-SET allows a variable or variables to be defined. Each attribute is processed in turn.
+## SET
 
-name=value sets a variable of the specified name to the specified value.
-name (with no =) unsets a variable of the specified name.
-EVAL
+`SET` allows a variable or variables to be defined. Each attribute is processed in turn.
 
-EVAL allows a variable or variables to be defined using simple maths. You can use +, -, * and / operators and parenthesis and work to any precision.
+- `name=value` sets a variable of the specified name to the specified value.
+- `name` (with no `=`) unsets a variable of the specified name.
 
-Note the special cases of .=, #=, /= and != apply to the settings after them in the EVAL, i.e. you must put these before the settings to which they are to be applied. (default format *)
+## EVAL
 
-name=value sets a variable of the specified name to the specified value evaluated using simple maths.
-name (with no =) unsets a variable of the specified name.
-#=places forces rounding to specified number of places for final result. This is often used for money, use #=2 to ensure result is to 2 decimal places even if .00 and bankers rounding is used. If you do not set a number of places with # then the maximum number of decimal places in any argument is used as the number of places for the final result. (format =)
-/=places limits final divide to number of places, but will use fewer places if the answer would have training zeros unless # is also set. (format +)
-!=string sets the default string to use if the evaluation is somehow invalid (e.g. not a valid sum, or divide by zero, etc).
-.=format sets the stringdecimal format type.
-Examples <EVAL X="1+2*3"> would set X to 7. <EVAL #=2 X="123*1.2"> would set X to 147.60.
+`EVAL` allows a variable or variables to be defined using simple maths. You can use `+`, `-`, `*` and `/` operators and parenthesis and work to any precision.
 
-Note: the value is expanded with variable names e.g. $NAME as you would expect, but also expands without the leading $ e.g. <EVAL X=A+B>. Also, any expanded variables that are blank or missing are treated as zero.
+Note the special cases of `.=`, `#=`, `/=` and `!=` apply to the settings after them in the `EVAL`, i.e. you must put these before the settings to which they are to be applied. (default format `*`)
+
+- `name=value` sets a variable of the specified name to the specified value evaluated using simple maths.
+- `name` (with no `=`) unsets a variable of the specified name.
+- `#=places` forces rounding to specified number of places for final result. This is often used for money, use `#=2` to ensure result is to 2 decimal places even if `.00` and bankers rounding is used. If you do not set a number of places with `#` then the maximum number of decimal places in any argument is used as the number of places for the final result. (format `=`)
+- `/=places` limits final divide to number of places, but will use fewer places if the answer would have training zeros unless # is also set. (format `+`)
+- `!=string` sets the default string to use if the evaluation is somehow invalid (e.g. not a valid sum, or divide by zero, etc).
+- `.=format` sets the stringdecimal format type.
+
+Examples `<EVAL X="1+2*3">` would set `X` to `7`. `<EVAL #=2 X="123*1.2">` would set `X` to `147.60`.
+
+Note: the value is expanded with variable names e.g. $NAME as you would expect, but also expands without the leading $ e.g. `<EVAL X=A+B>`. Also, any expanded variables that are blank or missing are treated as zero.
 
 Note: the sums are done with rational maths and rounded as a final divide.
 
-Note: Bankers rounding is normally applied, prefix places with a letter: T=Truncate (to 0); U=Up (away from 0);F=Floor (to -ve);C=Ceiling (to +ve);R=Round to nearest but 0.5 away from 0;B=Bankers rounding to nearest but 0.5 to even. E.g. to round up to whole number, #=U0.
+Note: Bankers rounding is normally applied, prefix places with a letter: `T`=Truncate (to 0); `U`=Up (away from 0); `F`=Floor (to -ve); `C`=Ceiling (to +ve); `R`=Round to nearest but 0.5 away from 0; `B`=Bankers rounding to nearest but 0.5 to even. E.g. to round up to whole number, `#=U0`.
 
-Warning: You should only provide well formed numeric expressions with correct balanced brackets. In general errors are reported by retuning a string starting with an !, but the exact behaviour in case of incorrect input is not defined and should not be relied on.
+**Warning**: You should only provide well formed numeric expressions with correct balanced brackets. In general errors are reported by retuning a string starting with an `!`, but the exact behaviour in case of incorrect input is not defined and should not be relied on.
 
-INPUT
+## INPUT
 
-The <INPUT...> tag has the NAME="..." field checked for a valid variable. If a variable is found then the INPUT is changed so that the specified variable is the initial value. If the variable is not found, no change is made to the source. You can include value attribute to set a default value, or set attribute to specify the value even if a variable/field of the name specified exists.
+The `<INPUT...>` tag has the `NAME="..."` field checked for a valid variable. If a variable is found then the `INPUT` is changed so that the specified variable is the initial value. If the variable is not found, no change is made to the source. You can include value attribute to set a default value, or set attribute to specify the value even if a variable/field of the name specified exists.
 
-RADIO and CHECKBOX cause CHECKED to be defined or removed depending on VALUE="...". If there is no VALUE defined, then CHECKED is set if the variable is not a blank string, otherwise it is removed. If the variable content contains TAB characters, then each of the strings between the tabs is considered to be a value, and CHECKED set for each INPUT where the VALUE="..." matches one of those strings.
-INPUT TYPE=SUBMIT is not change
-Other types of INPUT have the content of VALUE="..." changed to the correct value. Also, if the variable is defined and matches an SQL field, and SIZE is not defined, then SIZE is set to the field size plus 1. Similarly for MAXLENGTH which is set to the field size. Size is not set for TYPE=HIDDEN as there is no point.
-Including TRIM in the input will remove trailing zeros from a decimal fraction in the input box.
-SELECT/OPTION
+- `RADIO` and `CHECKBOX` cause `CHECKED` to be defined or removed depending on `VALUE="..."`. If there is no `VALUE` defined, then `CHECKED` is set if the variable is not a blank string, otherwise it is removed. If the variable content contains TAB characters, then each of the strings between the tabs is considered to be a value, and `CHECKED` set for each `INPUT` where the `VALUE="..."` matches one of those strings.
+- `INPUT TYPE=SUBMIT` is not changed
+- Other types of `INPUT` have the content of `VALUE="..."` changed to the correct value. Also, if the variable is defined and matches an SQL field, and SIZE is not defined, then SIZE is set to the field size plus 1. Similarly for `MAXLENGTH` which is set to the field size. Size is not set for `TYPE=HIDDEN` as there is no point.
+- Including `TRIM` in the input will remove trailing zeros from a decimal fraction in the input box.
+
+## SELECT/OPTION
 
 The NAME="..." from the <SELECT...> is checked as a variable name. If defined then the <OPTION...> tags within the SELECT are considered and changed. For each, the VALUE is either specified in the <OPTION VALUE="..."> or as the text after <OPTION> - this is checked against the variavle value and SELECTED added or removed from trhe <OPTION...> tag as appropriate. If the variable content contains TAB characters, then each of the strings between the tabs is considered to be a value, and SELECT set for each OPTION where the value matches one of those strings. You can override the use of the variable/field with set attribute.
 
