@@ -140,6 +140,8 @@ Note that the `--safe` command line option stops the `FILE=...` argument from fu
 
 The `<OUTPUT...>` tag is used to produce output. It has several attributes that define what is to be output.
 
+### Attributes
+
 |Attribute|Meaning|
 |---------|-------|
 |`NAME`		|Field name to be output|
@@ -160,38 +162,42 @@ The `<OUTPUT...>` tag is used to produce output. It has several attributes that 
 |`REPLACE`	|As `MATCH`, except any instance of the tag in the output is replaced with value. This is done after HTML or other escaping. e.g. `":)"="<img src='smiley.png'>"` would do smiley replacement in test.|
 |`ISDDISABLED`	|Checks if `ISDISABLED` is set and if so added a `disabled=disabled` to and `INPUT` tag.|
 
-Note that you can include, as the final attribute, a `$variable` to expand as additional attributes - use with care..
+Note that you can include, as the final attribute, a `$variable` to expand as additional attributes - use with care.
 
-## TYPE values
-TIMESTAMP	Use time format %d %b %Y %H:%M:%S
-DATE	Use time format %d %b %Y , or %FT%T%z if xml output
-*%*	Anything with % in it is assumed to be a time format for strftime
-INTERVAL	Show an integer number of seconds Yesterday
-RECENT	Use a relative time format for a date or datetime such as 120= 2:00
-MEGA	Show an integer value using P, T, G, M or k suffix depending on size. Note that if you include the attribute KELVIN then K is used instead of k for kilo.
-MEBI	Show an integer value using Pi, Ti, Gi, Mi or ki suffix depending on size. Note that if you include the attribute FAKESI, then the prefixes are printed as if SI units instead of binary prefixes. KELVIN can also be used, as above.
-COMMA	Show an number with commas are three digit spacing, e.g. 1,234,567
-CASH	Show a number as cash, font red for negative, &pound; and forced two decimal places (bankers rounding applied).
-CASHcurrency	Show as CASH, but using currency USD, EUR or GBP.
-MASK	Show a CIDR bit count as a dotted quad IP4 format mask.
-NTH	Show a number followed by st, nd, rd or th as appropriate.
-IP	Show as IP address, reformatted as standard, so for example a decimal IP4 address is shown as a dotted quad format IPv4.
-UKTEL	Format a +xxx format number as a UK telephone number
-PENCE	Show a decimal number removing trailing zeros and optionally using ¼, ½, or ¾ where appropriate
-TRIM	Show a decimal number removing trailing zeros in the decimal fraction
-FLOOR	Truncate at decimal point / full stop.
-AGE	Show difference from now, single units appropriate to time to nearest ¼. e.g. 5 minutes, or 44½ years, etc.
-YEARS	Show difference from now in years, e.g. age in years based on DOB.
-IDN	Converts to UTF-8 if in IDN format
-SURNAME	Surname from name, i.e. last word
-FORENAME	Forename from name, i.e. skip recognised title and return first word
-FORENAMES	Forenames from name, i.e. skip recognised title and remove last word
-TITLE	Title from name if we recognise one
-Note that a type can be prefixed with + or -. If prefixed - then output is suppressed if the value does not start with a -, and if it does start with a - then the - is skipped. If prefixed + then output is suppressed if output does start with a -.
+### TYPE values
 
-FORMAT
+|Type|Meaning|
+|----|-------|
+|`TIMESTAMP`|	Use time format `%d %b %Y %H:%M:%S`|
+|`DATE`|	Use time format `%d %b %Y` , or `%FT%T%z` if xml output|
+|`*%*`|		Anything with `%` in it is assumed to be a time format for *strftime*|
+|`INTERVAL`|	Show an integer number of seconds Yesterday|
+|`RECENT`|	Use a relative time format for a date or datetime|
+|`MEGA`|	Show an integer value using `P`, `T`, `G`, `M` or `k` suffix depending on size. Note that if you include the attribute `KELVIN` then `K` is used instead of `k` for *kilo*.|
+|`MEBI`|	Show an integer value using `Pi`, `Ti`, `Gi`, `Mi` or `Ki` suffix depending on size. Note that if you include the attribute `FAKESI`, then the prefixes are printed as if SI units instead of binary prefixes. `KELVIN` can also be used, as above. But `Ki` is the normal suffix in this case, oddly.|
+|`COMMA`|	Show an number with commas are three digit spacing, e.g. `1,234,567`|
+|`CASH`|	Show a number as cash, font red for negative, `&pound;` and forced two decimal places (bankers rounding applied).|
+|`CASH`*currency*|	Show as `CASH`, but using currency `USD`, `EUR` or `GBP`.|
+|`MASK`|	Show a CIDR bit count as a dotted quad IP4 format mask.|
+|`NTH`|		Show a number followed by `st`, `nd`, `rd` or `th` as appropriate.|
+|`IP`|		Show as IP address, reformatted as standard, so for example a decimal IP4 address is shown as a dotted quad format IPv4.|
+|`UKTEL`|	Format a `+xxx` format number as a UK telephone number|
+|`PENCE`|	Show a decimal number removing trailing zeros and optionally using `¼`, `½`, or `¾` where appropriate|
+|`TRIM`|	Show a decimal number removing trailing zeros in the decimal fraction|
+|`FLOOR`|	Truncate at decimal point / full stop.|
+|`AGE`|		Show difference from now, single units appropriate to time to nearest `¼`. e.g. `5 minutes`, or `44½ years`, etc.|
+|`YEARS`|	Show difference from now in years, e.g. age in years based on DOB.|
+|`IDN`|		Converts to UTF-8 if in IDN format|
+|`SURNAME`|	Surname from name, i.e. last word|
+|`FORENAME`|	Forename from name, i.e. skip recognised title and return first word|
+|`FORENAMES`|	Forenames from name, i.e. skip recognised title and remove last word|
+|`TITLE`|	Title from name if we recognise one|
 
-In addition to data types, there is a control for the formatting of the output, using FORMAT=.
+Note that a type can be prefixed with `+` or `-`. If prefixed `-` then output is suppressed if the value does not start with a `-`, and if it does start with a `-` then the `-` is skipped. If prefixed `+` then output is suppressed if output does start with a `-`.
+
+## FORMAT
+
+In addition to data types, there is a control for the formatting of the output, using `FORMAT=`.
 
 FORMAT values
 PS	Escape suitable for postscript use (\ in front of ( or ) or \).
