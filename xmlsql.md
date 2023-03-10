@@ -58,6 +58,7 @@ The `<SQL...>` tag is used to start an SQL query. You must have a corresponding 
 
 ### SQL attributes
 |Attribute|Meaning|
+|---------|-------|
 |`TABLE`|	This defined the table to be used and is placed after the `FROM` keyword in the query.|
 |`FROM`|	As above|
 |`SELECT`|	This defines the selected fields to be used and is placed after the `SELECT` keyword in the query. If missing, `*` is assumed.|
