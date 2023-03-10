@@ -260,53 +260,53 @@ The `<WHILE...>` tag works the same way as if, except that if the condition is t
 
 ## FOR
 
-The <FOR...> tag has one or more attributes name=value, and iterates the contents of the <FOR>...</FOR> setting the named environment variable each time. The variable is set to each word in the value. The words are spaces by TAB usually, but if the attribute TAB, HASH, SPACE, NL, or LF are included before name=value then they change the delimiter. E.g. <FOR SPACE A="1 2 3">[<output name=A>]</FOR> will output [1][2][3].
+The `<FOR...>` tag has one or more attributes name=value, and iterates the contents of the `<FOR>...</FOR>` setting the named environment variable each time. The variable is set to each word in the value. The words are spaces by `TAB` usually, but if the attribute `TAB`, `HASH`, `SPACE`, `NL`, or `LF` are included before name=value then they change the delimiter. E.g. `<FOR SPACE A="1 2 3">[<output name=A>]</FOR>` will output `[1][2][3]`.
 
-There is also a special case for use of <FOR>...</FOR> for simple loops. Where the value has two words only that are integers, and where UP or DOWN is included before it, that causes the value to be treated as an integer and go or down one at a time from the first to last word.
+There is also a special case for use of `<FOR>...</FOR>` for simple loops. Where the value has two words only that are integers, and where `UP` or `DOWN` is included before it, that causes the value to be treated as an integer and go or down one at a time from the first to last word.
 
-It is also possible to loop time/dates using DAY, MONTH, YEAR, WEEK, HOUR, MINUTE, or SECOND as a tag before the name=value. This expects two words in the value that are ISO date/time format and will iterate up from one to the other in the interval specified.
+It is also possible to loop time/dates using `DAY`, `MONTH`, `YEAR`, `WEEK`, `HOUR`, `MINUTE`, or `SECOND` as a tag before the `name=value`. This expects two words in the value that are ISO date/time format and will iterate up from one to the other in the interval specified.
 
 ## DIR
 
-Directory listing. With no PATH set this is directory listing of current directory. If PATH is a name of a directory, then that is listed, otherwise PATH is expanded as normal shell glob to a list of files and they are processed.
+Directory listing. With no `PATH` set this is directory listing of current directory. If `PATH=` is a name of a directory, then that is listed, otherwise `PATH` is expanded as normal shell glob to a list of files and they are processed.
 
-For each file, the variables are set for FILENAME, FILELEAF, FILEEXT, FILESIZE, FILETYPE, FILEMODE, FILEMTIME, FILECTIME, FILEATIME, and the enclosed XML processed. Normally a directory list ignores files starting with a dot, but including ALL includes these.
+For each file, the variables are set for `FILENAME`, `FILELEAF`, `FILEEXT`, `FILESIZE`, `FILETYPE`, `FILEMODE`, `FILEMTIME`, `FILECTIME`, `FILEATIME`, and the enclosed XML processed. Normally a directory list ignores files starting with a dot, but including ALL includes these.
 
 ## SCRIPT
 
-The <SCRIPT...> tag can include var=name one or more times which causes var name='value'; to be added to the start of the script content. The special case var=* causes all columns in the current <SQL...> query to be output.
+The `<SCRIPT...>` tag can include `var=name` one or more times which causes `var name='value';` to be added to the start of the script content. The special case `var=*` causes all columns in the current `<SQL...>` query to be output.
 
-You can include object=name which creates a single new var called name with all of the listed vars within it rather than as separate var declarations. This is recommended as it avoids creating unnecessary global variables in javascript.
+You can include `object=name` which creates a single new `var` called name with all of the listed vars within it rather than as separate `var` declarations. This is recommended as it avoids creating unnecessary global variables in javascript.
 
-The name of the variable can also be prefixed with a *, e.g. var=*name to indicate the value is to be output raw unquoted, this is mainly where an SQL query set the value of the variable using JSON or JSARRAY. Bear in mind if the values is not valid JSON you could execute any script, etc, from the variable (or file if used with @) in javascript.
+The name of the variable can also be prefixed with a `*`, e.g. `var=*name` to indicate the value is to be output raw unquoted, this is mainly where an SQL query set the value of the variable using JSON or JSARRAY. Bear in mind if the values is not valid JSON you could execute any script, etc, from the variable (or file if used with `@`) in javascript.
 
-The name of the variable can also be prefixed with an @, e.g. var=@name to indicate the value is the content of a file which is in name. You can use @ and *. This is risky as the variable could be any file name on the system.
+The name of the variable can also be prefixed with an `@`, e.g. `var=@name` to indicate the value is the content of a file which is in name. You can use `@` and `*`. This is risky as the variable could be any file name on the system.
 
-IMG
+## IMG
 
-An img tag with attribute base64= and a filename will check the file exists and confirm if it looks like a PNG, GIF, or JPEG file. If so, it will create a src= with base64 data URI encoded content of the file. Any existing src= is stripped. If the file cannot be recognised then the img is output anyway, thus allowing src= to be used as a fallback.
+An `<IMG...>` tag with attribute `base64=filename` will check the file exists and confirm if it looks like a PNG, GIF, or JPEG file. If so, it will create a `src=` with base64 data URI encoded content of the file. Any existing `src=` is stripped. If the file cannot be recognised then the `<IMG...>` is output anyway, thus allowing `src=` to be used as a fallback.
 
-MARKUP format
+## MARKUP format
 
 Markup output format is intended to be used where what is being output has been input by end users. Markup that is output as markup is restricted to certain specific case that are safe. e.g. it has to be balanced so you could not, for example, start a bold tag and not end it so leaving the rest of the page bold. Only the following markup is allowed, and all other cases are escaped.
 
-Balanced <b> for bold< text.
-Balanced <i> for italic text.
-Balanced <s> for struck out text.
-Balanced <u> for underlined text.
-Balanced <blink> for blinking text.
-Use of www. followed by a valid domain made in to a link to that domain.
-Use of http://domain/link or https://domain/link makde in to a link to that domain.
-Use of any smilies where smiley= is used on `xmlsql` command.
-Other balanced markup with no attributes, e.g. <quote>xxx</quote> are coded as a span, e.g. <span class="quote">xxx</span>
-To provide smilies you need a directory containing .gif, .png, .jpg (or .jpeg), or .svg files. The text before the extension is the smiley (at least two characters). e.g. a file called :-).gif is a smiley image for :-). The smiley directory is specified as a relative link which must also be valid in the URL, e.g. --smiley=smilies with :-).gig in it would change any :-) to <img src='smilies//%3A%2D%29.gif' />
+- Balanced `<b>` for bold text.
+- Balanced `<i>` for italic text.
+- Balanced `<s>` for struck out text.
+- Balanced `<u>` for underlined text.
+- Balanced `<blink>` for blinking text.
+- Use of `www.` followed by a valid format domain made in to a link to that domain.
+- Use of `http://domain/link` or `https://domain/link` make in to a link to that domain.
+- Use of any smilies where `smiley=` is used on `xmlsql` command.
+- Other balanced markup with no attributes, e.g. `<quote>xxx</quote>` are coded as a `span`, e.g. `<span class="quote">xxx</span>`
+- To provide smilies you need a directory containing `.gif`, `.png`, `.jpg` (or `.jpeg`), or `.svg` files. The text before the extension is the smiley (at least two characters). e.g. a file called `:-).gif` is a smiley image for `:-)`. The smiley directory is specified as a relative link which must also be valid in the URL, e.g. `--smiley=smilies` with `:-).gif` in it would change any `:-)` to `<img src='smilies//%3A%2D%29.gif' />`
 
-Note that there is expecited to be whitespace before and after www.domain or http:// or https://, as well as before any smiley. A smiley must not be follwed by any alphanumeric character.
+Note that there is expected to be white space before and after `www.domain` or `http://...` or `https://...`, as well as before any smiley. A smiley must not be followed by any alphanumeric character.
 
-The <b>, etc, tags must be balance properly and must not have any other attributes. e.g. <b style='color:red;'> is not valid in this context.
+The `<b>`, etc, tags must be balance properly and must not have any other attributes. e.g. `<b style='color:red;'>` is not valid in this context.
 
-FORM
+## FORM
 
-There is an option to remove forms --no-form.
+There is an option to remove forms `--no-form`.
 
-There is an option to include a hidden field in forms --security. This defaults to the value of envirnment variable *. This is used with security functions in envpass and password.
+There is an option to include a hidden field in forms `--security`. This defaults to the value of environment variable `*`. This is used with security functions in commands `envpass` and `password`.
