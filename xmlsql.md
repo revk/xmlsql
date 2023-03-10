@@ -128,39 +128,41 @@ The `<INPUT...>` tag has the `NAME="..."` field checked for a valid variable. If
 
 ## SELECT/OPTION
 
-The NAME="..." from the <SELECT...> is checked as a variable name. If defined then the <OPTION...> tags within the SELECT are considered and changed. For each, the VALUE is either specified in the <OPTION VALUE="..."> or as the text after <OPTION> - this is checked against the variavle value and SELECTED added or removed from trhe <OPTION...> tag as appropriate. If the variable content contains TAB characters, then each of the strings between the tabs is considered to be a value, and SELECT set for each OPTION where the value matches one of those strings. You can override the use of the variable/field with set attribute.
+The `NAME="..."` from the `<SELECT...>` is checked as a variable name. If defined then the `<OPTION...>` tags within the `SELECT` are considered and changed. For each, the `VALUE` is either specified in the `<OPTION VALUE="...">` or as the text after `<OPTION>` - this is checked against the variable value and `SELECTED` added or removed from the `<OPTION...>` tag as appropriate. If the variable content contains TAB characters, then each of the strings between the tabs is considered to be a value, and `SELECT` set for each `OPTION` where the value matches one of those strings. You can override the use of the variable/field with set attribute.
 
-TEXTAREA
+## TEXTAREA
 
-The NAME="..." from the <TEXTAREA...> is checked as a variable name. If defined then everything up to the corresponding </TEXTAREA> is replaced with the variable's content. If not defined then FILE="..." is checked for a file that exists, and if it does then everythin within the textarea tag is replaced with the contents of the file.
+The `NAME="..."` from the `<TEXTAREA...>` is checked as a variable name. If defined then everything up to the corresponding `</TEXTAREA>` is replaced with the variable's content. If not defined then `FILE="..."` is checked for a file that exists, and if it does then everything within the textarea tag is replaced with the contents of the file.
 
-Note that the --safe command line option stops the file=... argument from functioning as it may allow access to system files like /etc/passwd.
+Note that the `--safe` command line option stops the `FILE=...` argument from functioning as it may allow access to system files like `/etc/passwd`.
 
-OUTPUT
+## OUTPUT
 
-The <OUTPUT...> tag is used to produce output. It has several attributes that define what is to be output.
+The `<OUTPUT...>` tag is used to produce output. It has several attributes that define what is to be output.
 
-OUTPUT attributes
-NAME	Field name to be output
-VALUE	Alternative NAME="..." allows a complete value which may have several variables to be output.
-FILE	Alternative VALUE="..." allows a complete value which is read from a file.
-TYPE	Type of output format to use.
-HREF	Defines that an <A HREF="..."> and </A> are to surround the value output (if not an empty string) using the specified HREF value.
-TARGET	Where HREF is used, the <A...> tag includes TARGET="..." using this value.
-CLASS	If HREF defined, then this is the CLASS on the HREF, else this means a span with that CLASS surrounds the value (if not an empty string).
-STYLE	If HREF defined, then this is the STYLE on the HREF, else this means a span with that STYLE surrounds the value (if not an empty string).
-SIZE	Truncate output to specified number of characters as formatted, and adds ... to end if truncated.
-RIGHT	Prepend spaces to simple text output to make SIZE wide
-MISSING	Value to assume if field is not defined.
-BLANK	Value to assume if field is an empty string.
-XML	Indicate that this output is for quoted xml use not html, so escaping is handled differently.
-other	All other attributes define an alternative string to use where the value matches the attribute name specified and is not one of the tags listed above. This is the old way to use this, see MATCH and REPLACE.
-MATCH	All tags after this are assumed to be replacement for the whole value of the output, e.g. tag=value means if the output is tag then it is changed the value. After MATCH none of the tags listed above are recognised, so you can replace an output of CLASS with something if CLASS=value is listed after MATCH.
-REPLACE	As MATCH, except any instance of the tag in the output is replaced with value. This is done after HTML or other escaping. e.g. ":)"="<img src='smiley.png'>" would do smiley replacement in test.
-ISDDISABLED	Checks if ISDISABLED is set and if so added a disabled=disabled to and INPUT tag.
-Note that you can include, as the final attribute, a $variable to expand as additional attributes - use with care.
+|Attribute|Meaning|
+|---------|-------|
+|`NAME`		|Field name to be output|
+|`VALUE`	|Alternative `NAME="..."` allows a complete value which may have several variables to be output.|
+|`FILE`		|Alternative `VALUE="..."` allows a complete value which is read from a file.|
+|`TYPE`		|Type of output format to use.|
+|`HREF`		|Defines that an `<A HREF="...">` and `</A>` are to surround the value output (if not an empty string) using the specified `HREF` value.|
+|`TARGET`	|Where `HREF` is used, the `<A...>` tag includes `TARGET="..."` using this value.|
+|`CLASS`	|If `HREF` defined, then this is the `CLASS` on the `HREF`, else this means a `<SPAN...>` with that `CLASS` surrounds the value (if not an empty string).|
+|`STYLE`	|If `HREF` defined, then this is the `STYLE` on the `HREF`, else this means a `<SPAN...>` with that `STYLE` surrounds the value (if not an empty string).|
+|`SIZE`		|Truncate output to specified number of characters as formatted, and adds `...` to end if truncated.|
+|`RIGHT`	|Prepend spaces to simple text output to make `SIZE` wide|
+|`MISSING`	|Value to assume if field is not defined.|
+|`BLANK`	|Value to assume if field is an empty string.|
+|`XML`		|Indicate that this output is for quoted xml use not html, so escaping is handled differently.|
+|*other*	|All other attributes define an alternative string to use where the value matches the attribute name specified and is not one of the tags listed above. This is the old way to use this, see `MATCH` and `REPLACE`.|
+|`MATCH`	|All tags after this are assumed to be replacement for the whole value of the output, e.g. `tag=value` means if the output is tag then it is changed the value. After `MATCH` none of the tags listed above are recognised, so you can replace an output of `CLASS` with something if `CLASS=value` is listed after `MATCH`.|
+|`REPLACE`	|As `MATCH`, except any instance of the tag in the output is replaced with value. This is done after HTML or other escaping. e.g. `":)"="<img src='smiley.png'>"` would do smiley replacement in test.|
+|`ISDDISABLED`	|Checks if `ISDISABLED` is set and if so added a `disabled=disabled` to and `INPUT` tag.|
 
-TYPE values
+Note that you can include, as the final attribute, a `$variable` to expand as additional attributes - use with care..
+
+## TYPE values
 TIMESTAMP	Use time format %d %b %Y %H:%M:%S
 DATE	Use time format %d %b %Y , or %FT%T%z if xml output
 *%*	Anything with % in it is assumed to be a time format for strftime
