@@ -2794,6 +2794,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
          xmlattr *xml = xmlfindattr(x, "XML");
          xmlattr *json = xmlfindattr(x, "JSON");
          xmlattr *jsarray = xmlfindattr(x, "JSARRAY");
+         xmlattr *jsarrayhead = xmlfindattr(x, "JSARRAYHEAD");
          xmlattr *tablehead = xmlfindattr(x, "TABLEHEAD");
          xmlattr *tablerow = xmlfindattr(x, "TABLEROW");
          if ((json && json->value) || (jsarray && jsarray->value) || (tablerow && tablerow->value))
@@ -3091,20 +3092,31 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                      }
                      fprintf(out, "</%s>\n", xml->value ? : "Row");
                   }
-               } else if (json || jsarray)
+               } else if (json || jsarray || jsarrayhead)
                {
                   int found = 0;
                   fprintf(out, "[");    // top level array
+                  if (jsarrayhead)
+                  { // heading row
+		     found++;
+                     fprintf(out, "[");
+                     for (int f = 0; f < fields[level]; f++)
+                     {
+                        if (f)
+                           fprintf(out, ",");
+                        jsonout(field[level][f].name);
+                     }
+                     fprintf(out, "]");
+                  }
                   while ((row[level] = sql_fetch_row(res[level])))
                   {
                      if (found++)
                         fprintf(out, ",");
-                     int f;
                      if (json)
                      {          // object
                         int found = 0;
                         fprintf(out, "{");
-                        for (f = 0; f < fields[level]; f++)
+                        for (int f = 0; f < fields[level]; f++)
                         {
                            char *c = row[level][f];
                            if (!c)
@@ -3122,7 +3134,7 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                      } else
                      {          // array
                         fprintf(out, "[");
-                        for (f = 0; f < fields[level]; f++)
+                        for (int f = 0; f < fields[level]; f++)
                         {
                            if (f)
                               fprintf(out, ",");

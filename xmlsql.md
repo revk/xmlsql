@@ -76,6 +76,7 @@ The `<SQL...>` tag is used to start an SQL query. You must have a corresponding 
 |`CSV`|		If specified then the `<sql.../>` must be self closing. This creates an CSV style set of rows.|
 |`XML`|		If specified then the `<sql.../>` must be self closing. This creates an XML style set of rows, each tagged using the value given to XML. E.g. `XML="row"`. Be careful in using select names and using `AS` to ensure valid XML tag names as this is not checked. If `XML` has no value (i.e. just `XML` not `XML=`) then generates Excel style table rows instead.|
 |`JSARRAY`|	If specified then the `<sql...>` must be self closing. This creates a JSON array which contains arrays of the values from the query. If JSARRAY has a value, it is the name of a variable, and the entire JSON formatted output of the query is put in that variable.|
+[`JSARRAYHEAD`|	If set, the first row in the `JSARRAY` output is an array of field names in order.|
 |`JSON`|	If specified then the `<sql.../>` must be self closing. This creates a JSON array which contains objects with the tagged values from the query. If JSON has a value, it is the name of a variable, and the entire JSON formatted output of the query is put in that variable.|
 |`TABLEHEAD`|	This creates a simple HTML table row with `<th>` tags for the column headings in the query.|
 |`TABLEROW`|	If specified then the `<sql.../>` must be self closing. This creates simple HTML table rows with `<td>` tags for the column data in the result.|
