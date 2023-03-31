@@ -3097,8 +3097,8 @@ xmltoken *dosql(xmltoken * x, process_t * state)
                   int found = 0;
                   fprintf(out, "[");    // top level array
                   if (jsarrayhead)
-                  { // heading row
-		     found++;
+                  {             // heading row
+                     found++;
                      fprintf(out, "[");
                      for (int f = 0; f < fields[level]; f++)
                      {
@@ -4206,7 +4206,7 @@ int main(int argc, const char *argv[])
    int contenttype = 0;
    poptContext optCon;          // context for parsing command-line options
    const struct poptOption optionsTable[] = {
-      { "sql-conf", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_STRING, &sqlconf, 0, "Client config file", "filename" },
+      { "sql-conf", 0, POPT_ARGFLAG_SHOW_DEFAULT | POPT_ARG_STRING, &sqlconf, 0, "Client config file ($SQL_CNF_FILE)", "filename" },
       { "sql-host", 'h', POPT_ARG_STRING, &sqlhost, 0, "SQL server host", "hostname/ip" },
       { "sql-port", 0, POPT_ARG_INT, &sqlport, 0, "SQL server port", "port" },
       { "sql-user", 'u', POPT_ARG_STRING, &sqluser, 0, "SQL username", "username" },
@@ -4244,6 +4244,8 @@ int main(int argc, const char *argv[])
       fprintf(stderr, "%s: %s\n", poptBadOption(optCon, POPT_BADOPTION_NOALIAS), poptStrerror(c));
       return 1;
    }
+   if (!sqlconf)
+      sqlconf = getenv("SQL_CNF_FILE");
 
    if (contenttype)
       printf("Content-Type: text/html\r\n\r\n");
