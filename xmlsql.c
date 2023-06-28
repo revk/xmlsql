@@ -1530,7 +1530,7 @@ xmltoken *dooutput(xmltoken * x, process_t * state)
             *o++ = *p++;
             l--;
             s++;
-         } while (l && (l % 3 || l > 15));
+         } while (l && (l % 3 || l > 18));
          if (l && s < 3)
          {
             *o++ = '.';
