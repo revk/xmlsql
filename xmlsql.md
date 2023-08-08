@@ -38,7 +38,7 @@ It is strongly recommended that the arguments for `xmlsql` are not processed by 
 In most cases the `$` expansion uses the rules as specified for the `xmlexpand` command. However, there are some exceptions.
 (see https://github.com/revk/SQLlib/blob/master/sqlexpand.md for details of the `sqlexpand` processing)
 
-- If an attribute value starts `$?name` then the whole attribute is ignored if the variable name does not exist. Used to make an attribute conditional.
+- If an attribute value starts `$?name` then the whole attribute is ignored if the variable name does not exist. The `$?name` itself is not expanded. e.g. `tag="${?testvar}1234" will be either not present or `tag="1234"` depending on `testvar` existing or not. Used to make an attribute conditional.
 - Nested expansion is allowed, e.g. `${$name}` gets `$name` and then gets a variable by that name.
 - In the case of the tags for generating an SQL query, the operations are exactly the same as the `xmlexpand` command.
 
