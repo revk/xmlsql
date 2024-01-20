@@ -34,7 +34,7 @@ stringdecimal/stringdecimaleval.o: stringdecimal/stringdecimal.c
 	make -C stringdecimal
 
 xmlparse.o: xmlparse.c Makefile
-	cc -c -o $@ $< ${OPTS} -DLIB -DDOLLAREXPAND='"output,a"'
+	cc -c -o $@ $< ${OPTS} -DLIB -DDOLLAREXPAND='"output,a,if"'
 
 punycode.o: punycode.c Makefile
 	cc -c -o $@ $< ${OPTS} -DLIB
