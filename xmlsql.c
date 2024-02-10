@@ -2601,12 +2601,14 @@ doif (xmltoken * x, process_t * state)
                istrue = (stringdecimal_cmp (z, t) >= 0 ? !neg : neg);
             else if (*v == '#' && v[1] == '-')  // numeric -
                istrue = (stringdecimal_cmp (z, t) <= 0 ? !neg : neg);
+            else if (*v == '#' && v[1] == '=')  // numeric =
+               istrue = (!stringdecimal_cmp (z, t) ? !neg : neg);
             else if (*v == '&' || (*v == '#' && v[1] == '&'))   // numeric &
                istrue = ((atoll (z) & atoll (t)) ? !neg : neg);
             else if (*v == '*' && v[1]) // string substring
                istrue = ((strstr (z, t) || (*z && strstr (t, z))) ? !neg : neg);
-            else if (*v == '=' || *v == '#')    // numeric =
-               istrue = (!stringdecimal_cmp (z, t) ? !neg : neg);
+            else if (*v == '=') // string compare
+               istrue = (!strcmp (z, t) ? !neg : neg);
             else if (!strcmp (t, "0"))
             {                   // special case zero compare, true if target has 0 in it and only 0, -, ., :, or space or is empty string
                if (!*z)

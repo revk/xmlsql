@@ -240,12 +240,13 @@ To work out if an `IF` tag is true or false, each attribute is considered in tur
 |`name`|	True if the variable exists.|
 |`name=0`|	True of the variable specified by the name has a zero value, including `0000-00-00`, `0000-00-00 00:00:00`, `000000000000000`, `0.00`, etc. A *blank* string is also matched.|
 |`name=value`|	True of the variable specified by the name has the value. Note that this is a textual comparison and no evaluation is done on value other than normal variable expansion.|
+|`name==value`|	True of the variable specified by the name has the value. Note that this is a textual comparison and no evaluation is done on value other than normal variable expansion.|
 |`name=+value`|	True if the value of the name variable is alphabetically the same or after the value. Note this is a purely textual comparison.|
 |`name=-value`|	True if the value of the name variable is alphabetically the same or before the value. Note this is a purely textual comparison.|
 |`name=*value`|	True if the value of the name variable is the same or a substring of the value, or if the value is not an empty string, if the value is a substring of the value of the name variable.|
-|`name==value`|	True if the numeric value of the name variable is the same as the numeric value of the value.|
 |`name=#+value`|	True if the numeric value of the name variable is the same or greater than the numeric value of the value..|
 |`name=#-value`|	True if the numeric value of the name variable is the same or less than the numeric value of the value.|
+|`name=#=value`|	True if the numeric value of the name variable is the same as the numeric value of the value.|
 |`name=&value`|	True if the numeric value of the name variable has bits in common with the numeric value of the value (binary `AND`).|
 |`NOT`|		Means the truth of the next attribute is inverted.|
 |`AND`|		Does nothing - attributes next to each other are implicitly `AND`'d|
