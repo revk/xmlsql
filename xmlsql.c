@@ -1249,7 +1249,7 @@ writeoutput (xmltoken * x, char *v, char *e, int hasreplace, int flags, int ps, 
             else if ((flags & FLAG_TEXTAREA) || isxml)
                fputc ('\n', of);
             else
-               xputs ("<br />", of, flags);
+               xputs ("<br>", of, flags);
          } else if (*v == '\f')
          {
             if (maxsize)
@@ -1257,7 +1257,7 @@ writeoutput (xmltoken * x, char *v, char *e, int hasreplace, int flags, int ps, 
             else if (flags & FLAG_TEXTAREA)
                fputc ('\f', of);
             else
-               xputs ("<br /><hr />", of, flags);
+               xputs ("<br><hr>", of, flags);
          }
          //else if (*v == (char) 160) fprintf (of, "&nbsp;");
          else if (*v == '\'')
@@ -3005,9 +3005,9 @@ dosql (xmltoken * x, process_t * state)
                while (*c)
                {
                   if (*c == '\n' || (*c == '\r' && v[1] != '\n'))
-                     fprintf (out, "<br />");
+                     fprintf (out, "<br>");
                   else if (*c == '\f')
-                     fprintf (out, "<br /><hr />");
+                     fprintf (out, "<br><hr>");
                   //else if (*c == (char) 160) fprintf (out, "&nbsp;");
                   else if (*c == '\'')
                      fprintf (out, "&#39;");    //apos does not work in IE Except xml
