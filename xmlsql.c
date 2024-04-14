@@ -96,6 +96,7 @@ const char *security = NULL;
 FILE *of = 0;
 int isxml = 0;
 int allowexec = 0;
+int dataurifold  = 0;
 
 #define MAXLEVEL 10
 int level = 0;
