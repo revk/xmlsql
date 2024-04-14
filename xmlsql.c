@@ -3749,6 +3749,7 @@ doimg (xmltoken * x, process_t * state)
    fprintf (of, " src=\"data:%s;base64,", type);
    char buf[1024];
    int v = 0,
+      ll = 0,
       b = 0;
    while ((l = read (f, buf, sizeof (buf))) > 0)
    {
@@ -3759,8 +3760,10 @@ doimg (xmltoken * x, process_t * state)
          v = (v << 8) + buf[p];
          while (b >= 6)
          {
+            if( dataurifold && ll == dataurifold ) { fputc('\n',of); ll=0; }
             b -= 6;
             fputc (BASE64[(v >> b) & ((1 << 6) - 1)], of);
+            ll++;
          }
       }
    }
@@ -4300,6 +4303,7 @@ main (int argc, const char *argv[])
       {"no-form", 'f', POPT_ARG_NONE, &noform, 0, "Remove forms and change inputs to text"},
       {"security", 0, POPT_ARG_STRING, &security, 0, "Add hidden field to forms", "value"},
       {"show-hidden", 's', POPT_ARG_NONE, &showhidden, 0, "Remove type=hidden in input"},
+      {"dataurifold", 0, POPT_ARG_INT, &dataurifold, 0, "fold datauri (70 is good for qprint)"},
       {"max-input-size", 'm', POPT_ARG_INT, &maxinputsize, 0,
        "When setting size from database field, limit to this max (0=dont set)"},
       {"debug", 'v', POPT_ARG_NONE, &debug, 0, "Debug"},        //
