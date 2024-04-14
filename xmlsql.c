@@ -85,6 +85,7 @@ int comment = 0;
 int noform = 0;
 int showhidden = 0;
 int maxinputsize = 80;
+int dataurifold = 0;
 const char *sqlconf = NULL;
 const char *sqlhost = NULL;
 unsigned int sqlport = 0;
