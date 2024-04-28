@@ -4187,7 +4187,7 @@ processxml (xmltoken * x, xmltoken * e, process_t * state)
             continue;
          }
       } else if ((x->type & XML_END) && security && !strcasecmp (x->content, "FORM"))
-         fprintf (of, "<input type='hidden' name='" QUOTE (SECURITYTAG) "' value='%s'/>", security);    // Security as last input item in any form
+         fprintf (of, "<input type='hidden' name='" QUOTE (SECURITYTAG) "' value='%s'>", security);    // Security as last input item in any form
       if ((comment || !(x->type & XML_COMMENT)) && (!noform || !state || !state->selectvalue || state->selectedoption))
          tagwrite (of, x, (void *) 0);
       x = x->next;
