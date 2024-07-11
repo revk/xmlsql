@@ -250,7 +250,11 @@ readtime (char *val, time_t * when)
 
    if (!val)
       return 0;
-   if (strlen (val) == 19)
+   int len = strlen (val);
+   char *d = strrchr (val, '.');
+   if (d)
+      len = d - val;
+   if (len == 19)
    {                            /* YYYY-MM-DD HH:MM:SS */
       t.tm_year = 1000 * (val[0] - '0') + 100 * (val[1] - '0') + 10 * (val[2] - '0') + val[3] - '0';
       t.tm_mon = 10 * (val[5] - '0') + val[6] - '0';
@@ -259,13 +263,13 @@ readtime (char *val, time_t * when)
       t.tm_min = 10 * (val[14] - '0') + val[15] - '0';
       t.tm_sec = 10 * (val[17] - '0') + val[18] - '0';
       fmt = "%Y-%m-%d %H:%M:%S";
-   } else if (strlen (val) == 10)
+   } else if (len == 10)
    {                            /* YYYY-MM-DD */
       t.tm_year = 1000 * (val[0] - '0') + 100 * (val[1] - '0') + 10 * (val[2] - '0') + val[3] - '0';
       t.tm_mon = 10 * (val[5] - '0') + val[6] - '0';
       t.tm_mday = 10 * (val[8] - '0') + val[9] - '0';
       fmt = "%Y-%m-%d";
-   } else if (strlen (val) == 8 && val[2] == ':' && val[5] == ':')
+   } else if (len == 8 && val[2] == ':' && val[5] == ':')
    {                            /* HH:MM:SS */
       t.tm_year = 2000;         // 2000-01-01
       t.tm_mon = 1;
@@ -274,13 +278,13 @@ readtime (char *val, time_t * when)
       t.tm_min = 10 * (val[3] - '0') + val[4] - '0';
       t.tm_sec = 10 * (val[6] - '0') + val[7] - '0';
       fmt = "%H:%M:%S";
-   } else if (strlen (val) == 8)
+   } else if (len == 8)
    {                            /* YYYYMMDD */
       t.tm_year = 1000 * (val[0] - '0') + 100 * (val[1] - '0') + 10 * (val[2] - '0') + val[3] - '0';
       t.tm_mon = 10 * (val[4] - '0') + val[5] - '0';
       t.tm_mday = 10 * (val[6] - '0') + val[7] - '0';
       fmt = "%Y%m%d";
-   } else if (strlen (val) == 14)
+   } else if (len == 14)
    {                            /* YYYYMMDDHHMMSS */
       t.tm_year = 1000 * (val[0] - '0') + 100 * (val[1] - '0') + 10 * (val[2] - '0') + val[3] - '0';
       t.tm_mon = 10 * (val[4] - '0') + val[5] - '0';
@@ -3761,7 +3765,11 @@ doimg (xmltoken * x, process_t * state)
          v = (v << 8) + buf[p];
          while (b >= 6)
          {
-            if( dataurifold && ll == dataurifold ) { fputc('\n',of); ll=0; }
+            if (dataurifold && ll == dataurifold)
+            {
+               fputc ('\n', of);
+               ll = 0;
+            }
             b -= 6;
             fputc (BASE64[(v >> b) & ((1 << 6) - 1)], of);
             ll++;
@@ -4187,7 +4195,7 @@ processxml (xmltoken * x, xmltoken * e, process_t * state)
             continue;
          }
       } else if ((x->type & XML_END) && security && !strcasecmp (x->content, "FORM"))
-         fprintf (of, "<input type='hidden' name='" QUOTE (SECURITYTAG) "' value='%s'>", security);    // Security as last input item in any form
+         fprintf (of, "<input type='hidden' name='" QUOTE (SECURITYTAG) "' value='%s'>", security);     // Security as last input item in any form
       if ((comment || !(x->type & XML_COMMENT)) && (!noform || !state || !state->selectvalue || state->selectedoption))
          tagwrite (of, x, (void *) 0);
       x = x->next;
