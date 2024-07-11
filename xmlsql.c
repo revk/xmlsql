@@ -244,7 +244,7 @@ eval (char *e)
 char *
 readtime (char *val, time_t * when)
 {
-   char *fmt = NULL;
+   char *fmt = 0;
    struct tm t = { 0 };
    t.tm_isdst = -1;
 
@@ -300,9 +300,9 @@ readtime (char *val, time_t * when)
       t.tm_mon--;
       *when = mktime (&t);
       if (!*when)
-         fmt = NULL;
+         fmt = 0;
    } else
-      fmt = NULL;
+      fmt = 0;
    return fmt;
 }
 
@@ -1473,44 +1473,42 @@ dooutput (xmltoken * x, process_t * state)
          if (flags & FLAG_XML)
             addtz = 1;
       }
-      if (strchr (type, '%') && (strlen (v) == 19 || strlen (v) == 14 || strlen (v) == 8 || strlen (v) == 10))
+      time_t when;
+      if (strchr (type, '%') && readtime (v, &when))
       {                         /* time stamp print */
-         time_t when;
-         if (!readtime (v, &when))
-            v = "";
-         else
-         {
-            struct tm t = *localtime (&when);
-            strftime ((v = temp), sizeof (temp), type, &t);
-            if (addtz)
-            {                   // time zone suffix RFC3339 format
+         struct tm t = *localtime (&when);
+         char *d = strrchr (v, '.');
+         strftime ((v = temp), sizeof (temp), type, &t);
+         if (d && strlen (d) < sizeof (temp) - strlen (temp) - 1 && (strstr (type, "%T") || strstr (type, "%S")))
+            strcat (temp, d);
+         if (addtz && strlen (temp) + 7 < sizeof (temp))
+         {                      // time zone suffix RFC3339 format
 #ifdef __CYGWIN__
-               // tm_gmtoff is a BSD extension which Linux has but Cygwin doesn't
-               struct tm g = *gmtime (&when);
-               int o = ((t.tm_hour * 60) + t.tm_min) * 60 + t.tm_sec;
-               o -= (((g.tm_hour * 60) + g.tm_min) * 60 + g.tm_sec);
-               if (t.tm_wday != g.tm_wday)
-               {
-                  if (t.tm_wday - g.tm_wday == 1 || t.tm_wday - g.tm_wday == -6)
-                     o += 86400;
-                  else
-                     o -= 86400;
-               }
-#else
-               int o = t.tm_gmtoff;
-#endif
-               if (!o)
-                  strcat (temp, "Z");
+            // tm_gmtoff is a BSD extension which Linux has but Cygwin doesn't
+            struct tm g = *gmtime (&when);
+            int o = ((t.tm_hour * 60) + t.tm_min) * 60 + t.tm_sec;
+            o -= (((g.tm_hour * 60) + g.tm_min) * 60 + g.tm_sec);
+            if (t.tm_wday != g.tm_wday)
+            {
+               if (t.tm_wday - g.tm_wday == 1 || t.tm_wday - g.tm_wday == -6)
+                  o += 86400;
                else
+                  o -= 86400;
+            }
+#else
+            int o = t.tm_gmtoff;
+#endif
+            if (!o)
+               strcat (temp, "Z");
+            else
+            {
+               if (o < 0)
                {
-                  if (o < 0)
-                  {
-                     strcat (temp, "-");
-                     o = 0 - o;
-                  } else
-                     strcat (temp, "+");
-                  sprintf (temp + strlen (temp), "%02u:%02u", o / 60 / 60, o / 60 % 60);
-               }
+                  strcat (temp, "-");
+                  o = 0 - o;
+               } else
+                  strcat (temp, "+");
+               sprintf (temp + strlen (temp), "%02u:%02u", o / 60 / 60, o / 60 % 60);
             }
          }
       } else if (!strcasecmp (type, "INTERVAL"))
