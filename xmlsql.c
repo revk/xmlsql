@@ -244,7 +244,7 @@ eval (char *e)
 char *
 readtime (char *val, time_t * when)
 {
-   char *fmt = 0;
+   char *fmt = NULL;
    struct tm t = { 0 };
    t.tm_isdst = -1;
 
@@ -300,9 +300,9 @@ readtime (char *val, time_t * when)
       t.tm_mon--;
       *when = mktime (&t);
       if (!*when)
-         fmt = 0;
+         fmt = NULL;
    } else
-      fmt = 0;
+      fmt = NULL;
    return fmt;
 }
 
