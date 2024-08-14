@@ -158,10 +158,10 @@ The `<OUTPUT...>` tag is used to produce output. It has several attributes that 
 |`MISSING`	|Value to assume if field is not defined.|
 |`BLANK`	|Value to assume if field is an empty string.|
 |`XML`		|Indicate that this output is for quoted xml use not html, so escaping is handled differently.|
-|*other*	|All other attributes define an alternative string to use where the value matches the attribute name specified and is not one of the tags listed above. This is the old way to use this, see `MATCH` and `REPLACE`.|
 |`MATCH`	|All tags after this are assumed to be replacement for the whole value of the output, e.g. `tag=value` means if the output is tag then it is changed the value. After `MATCH` none of the tags listed above are recognised, so you can replace an output of `CLASS` with something if `CLASS=value` is listed after `MATCH`.|
 |`REPLACE`	|As `MATCH`, except any instance of the tag in the output is replaced with value. This is done after HTML or other escaping. e.g. `":)"="<img src='smiley.png'>"` would do smiley replacement in test.|
 |`ISDDISABLED`	|Checks if `ISDISABLED` is set and if so added a `disabled=disabled` to and `INPUT` tag.|
+|*other*	|All other attributes define an alternative string to use where the exact value matches the attribute name specified, the same as after `MATCH`, but only if the attribute is not one of the attributes listed above. As such using `MATCH` is recommended to avoid clashes.|
 
 Note that you can include, as the final attribute, a `$variable` to expand as additional attributes - use with care.
 
