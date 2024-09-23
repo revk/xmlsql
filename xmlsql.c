@@ -3455,7 +3455,7 @@ doinput (xmltoken * x, process_t * state)
          checked = size = maxlength = XMLATTREMOVE;
          if (*v && matchvalue (v, expand (temp, sizeof (temp), checkval)))
             checked = "checked";
-      } else
+      } else if (!type || strcasecmp (type, "file"))
          checkval = value = v;
    } else if (checked)
    {
