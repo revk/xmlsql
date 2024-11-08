@@ -347,15 +347,19 @@ fieldlen (MYSQL_FIELD * f)
 }
 
 char *
-getvar (const char *n, int *lenp)
+getvar (const char *n, int *lenp, int *levelp, int *fieldp)
 {                               // Return a variable content
+   if (levelp)
+      *levelp = -1;
+   if (fieldp)
+      *fieldp = -1;
    int l = level;
    if (lenp)
       *lenp = 0;
    if (!n)
       return 0;
    if (*n == '$')
-      n = getvar (n + 1, NULL); // Nested get, e.g. ${$X}
+      n = getvar (n + 1, NULL, levelp, fieldp); // Nested get, e.g. ${$X}
    // check SQL
    while (l)
    {
@@ -381,6 +385,10 @@ getvar (const char *n, int *lenp)
                    && (field[l][f].type == FIELD_TYPE_DATE || field[l][f].type == FIELD_TYPE_DATETIME
                        || field[l][f].type == FIELD_TYPE_TIMESTAMP))
                   v = "";
+               if (levelp)
+                  *levelp = l;
+               if (fieldp)
+                  *fieldp = f;
                return v;
             }
    }
@@ -391,7 +399,7 @@ getvar (const char *n, int *lenp)
 char *
 getvarexpand (const char *n)
 {
-   return getvar (n, NULL);
+   return getvar (n, NULL, NULL, NULL);
 }
 
 
@@ -471,7 +479,7 @@ expandd (char *buf, int len, const char *i, char sum)
          {
             //char literal = dollar_expand_literal(d); // TODO use to control safe expansion...
             char query = dollar_expand_query (d);
-            char *v = getvar (name, 0);
+            char *v = getvar (name, NULL, NULL, NULL);
             if (!v && query)
             {
                dollar_expand_free (&d);
@@ -1379,7 +1387,7 @@ dooutput (xmltoken * x, process_t * state)
       warning (x, "TARGET with no HREF in OUTPUT");
 
    if (name)
-      v = getvar (expand (tempname, sizeof (tempname), name), 0);
+      v = getvar (expand (tempname, sizeof (tempname), name), NULL, NULL, NULL);
    if (!v && value)
       v = expand (tempval, sizeof (tempval), value);
 
@@ -2579,7 +2587,7 @@ doif (xmltoken * x, process_t * state)
       } else if (v)
       {                         // NAME=X
          char temp[MAXTEMP];
-         char *z = getvar (n, 0);
+         char *z = getvar (n, NULL, NULL, NULL);
          char *e = v;
          char *t;
          if (!z)
@@ -2634,7 +2642,7 @@ doif (xmltoken * x, process_t * state)
          neg = 0;
       } else
       {                         // NAME (exists)
-         char *z = getvar (n, 0);
+         char *z = getvar (n, NULL, NULL, NULL);
          adddebug ("[%s]", z ? : "null");
          istrue = (z ? !neg : neg);
          neg = 0;
@@ -2685,16 +2693,18 @@ doif (xmltoken * x, process_t * state)
 xmltoken *
 dolater (xmltoken * x, process_t * state)
 {                               // do later function
+   if (!x->end)
+   {
+      warning (x, "Unclosed LATER tag", x->content);
+      return x->next;
+   }
    xmltoken *e = x->end;
    x = x->next;
-   if (!e)
-      warning (x, "Unclosed LATER tag");
-   else
-      while (x && x != e)
-      {
-         xmlwrite (of, x, (void *) 0);  // write as is - no expansion
-         x = x->next;
-      }
+   while (x && x != e)
+   {
+      xmlwrite (of, x, (void *) 0);     // write as is - no expansion
+      x = x->next;
+   }
    return x->next;
 }
 
@@ -2933,7 +2943,7 @@ dosql (xmltoken * x, process_t * state)
             else if (key && key->value)
             {
                char *v = strrchr (key->value, '.');
-               v = getvar (v ? : key->value, 0);
+               v = getvar (v ? : key->value, NULL, NULL, NULL);
                fprintf (o, " WHERE %s='%s'", key->value, v ? : "");
             }
             if (ex (group))
@@ -3234,7 +3244,7 @@ dosql (xmltoken * x, process_t * state)
                            fprintf (out, " class='sqlstring'");
                         else if (field[level][f].type == FIELD_TYPE_SET)
                            fprintf (out, " class='sqlset'");
-                        else if (field[level][f].type == FIELD_TYPE_ENUM)
+                        else if (field[level][f].flags & ENUM_FLAG)
                            fprintf (out, " class='sqlenum'");
                         else if (field[level][f].flags & NUM_FLAG)
                            fprintf (out, " class='sqlnum'");
@@ -3406,7 +3416,7 @@ doinput (xmltoken * x, process_t * state)
    if (set)
       len = strlen (v = expand (tempvar, sizeof (tempvar), set));
    else
-      v = getvar (expand (tempvar, sizeof (tempvar), name), &len);
+      v = getvar (expand (tempvar, sizeof (tempvar), name), &len, NULL, NULL);
    if (len)
    {
       if (!size && maxinputsize)
@@ -3605,7 +3615,7 @@ doscript (xmltoken * x, process_t * state)
                break;
             n++;
          }
-         char *v = getvar (n, 0);
+         char *v = getvar (n, NULL, NULL, NULL);
          if (v || !object)
          {
             if (count++ && object)
@@ -3804,7 +3814,7 @@ doselect (xmltoken * x, process_t * state)
 {                               // do select function
    char *name = getatt (x, "NAME");
    char *set = getatt (x, "set");
-   if (!noform)
+   if (!noform && x != x->end)
       tagwrite (of, x, (void *) 0);
    if (!x->end)
    {
@@ -3814,10 +3824,12 @@ doselect (xmltoken * x, process_t * state)
    if (!name || !*name)
    {
       warning (x, "SELECT with no NAME");
-      processxml (x->next, x->end, 0);
+      processxml (x->next, x->end, NULL);
       return x->end;
    }
    {
+      int l = -1,
+         f = -1;
       process_t state = {
          0
       };
@@ -3827,16 +3839,80 @@ doselect (xmltoken * x, process_t * state)
          if (set)
             v = expand (temp, sizeof (temp), set);
          else
-            v = getvar (expand (temp, sizeof (temp), name), 0);
+            v = getvar (expand (temp, sizeof (temp), name), NULL, &l, &f);
       }
       if (v)
          v = strdup (v);
       state.selectvalue = v;
       if (xmlfindattr (x, "MULTIPLE"))
          state.selectmultiple = 1;
+      if (x == x->end)
+      {                         // Self closed select, special handling
+         x->type &= ~XML_END;
+         tagwrite (of, x, (void *) 0);
+         if (l >= 0 && f > 0 && (field[l][f].flags & ENUM_FLAG))
+         {                      // Options from ENUM
+            if (!(field[l][f].flags & NOT_NULL_FLAG))
+               fprintf (of, "<option value='null'%s>---</option>", !v ? " selected" : "");
+            SQL_RES *res = sql_safe_query_store_f (&sql, "DESCRIBE `%#S` `%#S`", field[l][f].org_table, field[l][f].org_name);
+            if (sql_fetch_row (res))
+            {
+               char *p = strdupa (sql_colz (res, "Type"));
+               if (!strncmp (p, "enum(", 5))
+               {                // Very messy parsing of enum declaration, FFS
+                  p += 5;
+                  while (*p == '\'')
+                  {
+                     p++;
+                     char *q = p,
+                        *o = p,
+                        *t = p;
+                     while (*q)
+                     {
+                        if (*q == '\'')
+                        {
+                           if (q[1] != '\'')
+                              break;
+                           q++;
+                        } else if (*q == '\\' && q[1])
+                        {
+                           q++;
+                           if (*q == 'n')
+                              *o++ = '\n';
+                           else if (*q == 'b')
+                              *o++ = '\b';
+                           else if (*q == 'r')
+                              *o++ = '\r';
+                           else if (*q == 't')
+                              *o++ = '\t';
+                           else if (*q == 'Z')
+                              *o++ = 26;
+                           else
+                              *o++ = *q;
+                           q++;
+                           continue;
+                        }
+                        *o++ = *q++;
+                     }
+                     if (*q != '\'')
+                        break;
+                     *o = 0;
+                     *q++ = 0;
+                     p = q;
+                     if (*p == ',')
+                        p++;
+                     fprintf (of, "<option%s>", v && !strcmp (v, t) ? " selected" : "");
+                     xputs (t, of, FLAG_XML);
+                     fprintf (of, "</option>");
+                  }
+               }
+            }
+            sql_free_result (res);
+         }
+         fprintf (of, "</select>");
+      }
       processxml (x->next, x->end, &state);
-      if (v)
-         free (v);
+      free (v);
    }
    if (noform)
       return x->end->next;
@@ -3919,7 +3995,7 @@ dotextarea (xmltoken * x, process_t * state)
    char *class = getatt (x, "class");
    if (!strncasecmp (name, "FILE:", 5))
       name += 5;
-   v = getvar (expand (tempvar, sizeof (tempvar), name), 0);
+   v = getvar (expand (tempvar, sizeof (tempvar), name), NULL, NULL, NULL);
    if (v)
    {
       if (noform && class)
@@ -4001,7 +4077,7 @@ doinclude (xmltoken * x, process_t * state, char *value)
       }
    } else if ((a = xmlfindattr (x, "VAR")) && a->value)
    {                            // Include a variable directly
-      value = getvar (a->value, NULL);
+      value = getvar (a->value, NULL, NULL, NULL);
       if (value)
       {
          value = strdup (value);
@@ -4098,10 +4174,17 @@ doexec (xmltoken * x, process_t * state)
 xmltoken *
 processxml (xmltoken * x, xmltoken * e, process_t * state)
 {
+   xmltoken *last = NULL;
    while (x && x != e && !feof (of))
    {
       if (debug)
          fflush (of);
+      if (x == last)
+      {
+         last = x = x->next;
+         continue;
+      }
+      last = x;
       if (x->type & XML_START)
       {
          if (!strcasecmp (x->content, "OUTPUT") || !strcasecmp (x->content, "xmlsql:OUTPUT"))

@@ -131,6 +131,8 @@ The `<INPUT...>` tag has the `NAME="..."` field checked for a valid variable. If
 
 The `NAME="..."` from the `<SELECT...>` is checked as a variable name. If defined then the `<OPTION...>` tags within the `SELECT` are considered and changed. For each, the `VALUE` is either specified in the `<OPTION VALUE="...">` or as the text after `<OPTION>` - this is checked against the variable value and `SELECTED` added or removed from the `<OPTION...>` tag as appropriate. If the variable content contains TAB characters, then each of the strings between the tabs is considered to be a value, and `SELECT` set for each `OPTION` where the value matches one of those strings. You can override the use of the variable/field with set attribute.
 
+There is a special case handling if you have a self closing `SELECT` where the `name` references a field from a database query which is defined as an `enum`. This causes the enum values to be inserted as `option` fields.
+
 ## TEXTAREA
 
 The `NAME="..."` from the `<TEXTAREA...>` is checked as a variable name. If defined then everything up to the corresponding `</TEXTAREA>` is replaced with the variable's content. If not defined then `FILE="..."` is checked for a file that exists, and if it does then everything within the textarea tag is replaced with the contents of the file.
