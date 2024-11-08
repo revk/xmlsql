@@ -3814,7 +3814,7 @@ doselect (xmltoken * x, process_t * state)
 {                               // do select function
    char *name = getatt (x, "NAME");
    char *set = getatt (x, "set");
-   if (!noform && x != x->end)
+   if (!noform)
       tagwrite (of, x, (void *) 0);
    if (!x->end)
    {
@@ -3846,10 +3846,8 @@ doselect (xmltoken * x, process_t * state)
       state.selectvalue = v;
       if (xmlfindattr (x, "MULTIPLE"))
          state.selectmultiple = 1;
-      if (x == x->end)
+      if (x->next == x->end)
       {                         // Self closed select, special handling
-         x->type &= ~XML_END;
-         tagwrite (of, x, (void *) 0);
          if (l >= 0 && f > 0 && (field[l][f].flags & ENUM_FLAG))
          {                      // Options from ENUM
             if (!(field[l][f].flags & NOT_NULL_FLAG))
