@@ -3852,9 +3852,8 @@ doselect (xmltoken * x, process_t * state)
          {                      // Options from ENUM
             if (!(field[l][f].flags & NOT_NULL_FLAG))
                fprintf (of, "<option value='null'%s>---</option>", !v ? " selected" : "");
-            SQL_RES *res =
-               sql_safe_query_store_f (&sql, "DESCRIBE `%#S`.`%#S` `%#S`", field[l][f].db, field[l][f].org_table,
-                                       field[l][f].org_name);
+            SQL_RES *res = sql_safe_query_store_f (&sql, "DESCRIBE `%#S`.`%#S` `%#S`", field[l][f].db, field[l][f].org_table,
+                                                   field[l][f].org_name);
             if (sql_fetch_row (res))
             {
                char *p = strdupa (sql_colz (res, "Type"));
@@ -4179,7 +4178,7 @@ processxml (xmltoken * x, xmltoken * e, process_t * state)
    {
       if (debug)
          fflush (of);
-      if (x == last)
+      if ((x->type & XML_END) && x == last)
       {
          last = x = x->next;
          continue;
